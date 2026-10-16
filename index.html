@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>RTWet 3D — Wirtualny Spacer i Ścieżka Pacjenta (WebGL)</title>
+    <title>RTWet 3D — Wirtualny Spacer i Symulator Leczenia Pacjenta</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,12 +24,14 @@
           extend: {
             colors: {
               alabaster: "#F7F5F0",
+              cream: "#F3F1EC",
               obsidian: "#0E0E0D",
               charcoal: "#1A1918",
               brass: "#C5A67C",
               brassDark: "#9A784C",
               clinical: "#38BDF8",
-              emerald: "#34D399"
+              emerald: "#34D399",
+              amber: "#FBBF24"
             },
             fontFamily: {
               serif: ["Instrument Serif", "Georgia", "serif"],
@@ -105,7 +107,6 @@
         animation: pulseHalo 2s infinite cubic-bezier(0.16, 1, 0.3, 1);
       }
 
-      /* Hide scrollbar in horizontal nav on mobile */
       .no-scrollbar::-webkit-scrollbar {
         display: none;
       }
@@ -153,9 +154,10 @@
           class="text-xs sm:text-sm text-alabaster/75 mt-2 font-light leading-relaxed"
         >
           Wpisz imię swojego zwierzaka i wybierz gatunek. Przejdziemy wspólnie
-          przez 7 etapów wizyty — od powitania u Pani Marzeny na recepcji, przez
-          konsultację z dr Anną Jaśkiewicz, sedację u anestezjolog Emilii Sulik,
-          planowanie wiązki u technika Pawła, aż po bezbolesny zabieg.
+          przez 7 etapów wizyty — od powitania u Pani Marzeny, przez wybór
+          scenariusza choroby z onkolog dr Anną Jaśkiewicz, sedację u
+          anestezjolog Emilii Sulik, zatwierdzenie planu wiązki 3D u technika
+          Pawła, aż po zabieg w bunkrze akceleratora.
         </p>
 
         <div class="mt-6 space-y-5">
@@ -177,7 +179,7 @@
                   >Kot</span
                 >
                 <span class="text-[10px] text-alabaster/60 mt-0.5"
-                  >np. 4.8 kg</span
+                  >np. 4.85 kg</span
                 >
               </button>
 
@@ -192,7 +194,7 @@
                   >Pies</span
                 >
                 <span class="text-[10px] text-alabaster/60 mt-0.5"
-                  >np. 18.5 kg</span
+                  >np. 18.40 kg</span
                 >
               </button>
             </div>
@@ -236,11 +238,177 @@
       </div>
     </div>
 
+    <!-- ================= ONCOLOGY SCENARIOS MODAL (1:1 WEBSITE STYLE) ================= -->
+    <div
+      id="diseaseModal"
+      class="hidden fixed inset-0 z-50 bg-obsidian/90 backdrop-blur-lg flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+    >
+      <div
+        class="max-w-5xl w-full bg-[#F7F5F0] text-[#141413] border border-black/15 shadow-2xl overflow-hidden my-auto"
+      >
+        <!-- Modal Top Bar -->
+        <div
+          class="bg-obsidian text-alabaster px-5 py-3.5 flex items-center justify-between border-b border-white/15"
+        >
+          <div class="flex items-center gap-2.5">
+            <span class="w-2 h-2 rounded-full bg-emerald"></span>
+            <span
+              class="font-mono text-[11px] uppercase tracking-widest text-brass"
+              >KONSULTACJA ONKOLOGICZNA — DR ANNA JAŚKIEWICZ (SCENARIUSZE
+              LECZENIA)</span
+            >
+          </div>
+          <button
+            onclick="closeDiseaseModal()"
+            class="px-3 py-1 border border-white/20 text-xs font-mono uppercase hover:bg-white hover:text-obsidian transition"
+          >
+            Zamknij i kontynuuj ✕
+          </button>
+        </div>
+
+        <!-- 2-Column Website Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
+          <!-- Left Column: Species & 5 Diagnoses -->
+          <div
+            class="lg:col-span-5 bg-[#EFECE6] p-5 sm:p-7 border-b lg:border-b-0 lg:border-r border-black/10 flex flex-col justify-between"
+          >
+            <div>
+              <div
+                class="font-mono text-[10px] uppercase tracking-[0.18em] text-black/50 mb-2"
+              >
+                GATUNEK PACJENTA
+              </div>
+              <div
+                class="grid grid-cols-2 border border-black/15 bg-white p-1 mb-6"
+              >
+                <button
+                  type="button"
+                  onclick="switchModalSpecies('dog')"
+                  id="modalSpecBtn-dog"
+                  class="py-2.5 font-mono text-xs uppercase tracking-wider transition"
+                >
+                  PIES
+                </button>
+                <button
+                  type="button"
+                  onclick="switchModalSpecies('cat')"
+                  id="modalSpecBtn-cat"
+                  class="py-2.5 font-mono text-xs uppercase tracking-wider transition bg-[#141413] text-white font-semibold"
+                >
+                  KOT
+                </button>
+              </div>
+
+              <div
+                class="font-mono text-[10px] uppercase tracking-[0.18em] text-black/50 mb-2.5"
+              >
+                WYBIERZ ROZPOZNANIE
+              </div>
+              <div id="modalDiseaseList" class="space-y-2"></div>
+            </div>
+
+            <div
+              class="mt-6 pt-4 border-t border-black/10 text-[11px] text-black/60"
+            >
+              Wybrany scenariusz zostanie przypisany do karty pacjenta
+              <strong id="modalPetNameLabel" class="text-black">Mruczek</strong>
+              w symulacji planowania wiązki 3D u technika Pawła.
+            </div>
+          </div>
+
+          <!-- Right Column: Selected Scenario Clinical Details -->
+          <div
+            class="lg:col-span-7 p-6 sm:p-10 bg-white flex flex-col justify-between"
+          >
+            <div>
+              <div
+                class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-black/10"
+              >
+                <div
+                  class="font-mono text-xs uppercase tracking-[0.18em] text-black/70"
+                >
+                  PACJENT:
+                  <strong id="modalRightSpecies" class="text-black font-bold"
+                    >KOT</strong
+                  >
+                </div>
+                <span
+                  id="modalRightBadge"
+                  class="px-3 py-1 bg-[#E6F0EC] text-[#1B4332] font-sans text-xs font-medium"
+                >
+                  Bardzo wysoka skuteczność
+                </span>
+              </div>
+
+              <h2
+                id="modalRightTitle"
+                class="font-serif text-3xl sm:text-4xl text-[#141413] mt-6 leading-tight"
+              >
+                Guz z komórek tucznych (Mastocytoma / MCT)
+              </h2>
+
+              <p
+                id="modalRightDesc"
+                class="text-sm sm:text-base text-black/65 mt-4 leading-relaxed font-light"
+              >
+                Leczenie pooperacyjne (gdy chirurg nie mógł wyciąć guza z
+                szerokim marginesem) lub naświetlanie guza nieoperacyjnego.
+              </p>
+
+              <!-- 2 Info Boxes -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+                <div class="bg-[#F9F8F5] border border-black/10 p-5">
+                  <div
+                    class="font-mono text-[10px] uppercase tracking-[0.16em] text-black/50 mb-2"
+                  >
+                    TYPOWY SCHEMAT WIZYT
+                  </div>
+                  <div
+                    id="modalRightSchedule"
+                    class="text-sm font-semibold text-[#141413] leading-snug"
+                  >
+                    10–15 sesji (2–3 tygodnie) lub schemat skrócony
+                  </div>
+                </div>
+
+                <div class="bg-[#F9F8F5] border border-black/10 p-5">
+                  <div
+                    class="font-mono text-[10px] uppercase tracking-[0.16em] text-black/50 mb-2"
+                  >
+                    BADANIA DO KWALIFIKACJI
+                  </div>
+                  <ul
+                    id="modalRightTests"
+                    class="text-xs sm:text-sm text-black/80 space-y-1.5"
+                  ></ul>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="mt-8 pt-5 border-t border-black/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
+            >
+              <div class="text-xs text-black/60">
+                Narządy chronione w planowaniu 3D:
+                <strong id="modalRightOAR" class="text-black"></strong>
+              </div>
+              <button
+                type="button"
+                onclick="closeDiseaseModal()"
+                class="px-6 py-3 bg-[#141413] text-white font-mono text-xs uppercase tracking-wider hover:bg-brass hover:text-obsidian transition font-semibold shrink-0"
+              >
+                Zastosuj ten scenariusz w misji →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ================= TOP HUD BAR ================= -->
     <header
       class="absolute top-0 left-0 right-0 z-30 p-2.5 sm:p-5 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 pointer-events-none"
     >
-      <!-- Top Row on Mobile: Brand & Mode Switcher -->
       <div class="flex items-center justify-between gap-2">
         <!-- Brand & Current Room Indicator -->
         <div
@@ -294,7 +462,7 @@
         </div>
       </div>
 
-      <!-- Quick Teleport Bar (Horizontally Scrollable on Mobile) -->
+      <!-- Quick Teleport Bar -->
       <div
         id="tourNavBar"
         class="flex items-center gap-1 bg-obsidian/90 backdrop-blur-md border border-white/15 p-1.5 pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar max-w-full"
@@ -375,7 +543,7 @@
       </div>
     </header>
 
-    <!-- ================= BOTTOM LEFT: LIVE 2D RADAR MINIMAP (DESKTOP/TABLET) ================= -->
+    <!-- ================= BOTTOM LEFT: LIVE 2D RADAR MINIMAP ================= -->
     <div
       class="absolute bottom-6 left-6 z-20 hidden md:block bg-obsidian/90 backdrop-blur-md border border-white/15 p-3 pointer-events-auto shadow-2xl w-60"
     >
@@ -407,9 +575,9 @@
     <!-- ================= RIGHT / BOTTOM DRAWER: MISSION & ROOM INSPECTION CARD ================= -->
     <aside
       id="infoDrawer"
-      class="fixed bottom-0 left-0 right-0 md:left-auto md:top-28 md:right-6 md:bottom-6 md:w-96 max-h-[58vh] md:max-h-none z-30 bg-obsidian/95 backdrop-blur-xl border-t md:border border-white/20 p-4 sm:p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 translate-y-0 md:translate-x-0"
+      class="fixed bottom-0 left-0 right-0 md:left-auto md:top-28 md:right-6 md:bottom-6 md:w-[410px] max-h-[64vh] md:max-h-none z-30 bg-obsidian/95 backdrop-blur-xl border-t md:border border-white/20 p-4 sm:p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 translate-y-0 md:translate-x-0"
     >
-      <div class="space-y-3 sm:space-y-4 overflow-y-auto pr-1">
+      <div class="space-y-3 sm:space-y-3.5 overflow-y-auto pr-1">
         <div
           class="flex items-center justify-between border-b border-white/15 pb-2.5"
         >
@@ -443,9 +611,9 @@
           </div>
         </div>
 
-        <!-- Authentic RTWet Photo Thumbnail (Hidden on very small mobile screens to save space, visible on sm+) -->
+        <!-- Authentic RTWet Photo Thumbnail -->
         <div
-          class="hidden sm:block relative h-32 border border-white/15 overflow-hidden bg-charcoal shrink-0"
+          class="hidden sm:block relative h-28 border border-white/15 overflow-hidden bg-charcoal shrink-0"
         >
           <img
             id="drawer-img"
@@ -478,6 +646,136 @@
           Opis pomieszczenia...
         </p>
 
+        <!-- ================= ONCOLOGIST DISEASE SCENARIO SELECTOR (VISIBLE IN CONSULTATION) ================= -->
+        <div
+          id="oncologyScenarioBox"
+          class="hidden p-3.5 bg-white/[0.04] border border-brass/50 space-y-2.5"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span
+              class="font-mono text-[10px] uppercase tracking-wider text-brass"
+              >WYBIERZ SCENARIUSZ CHOROBY (DR JAŚKIEWICZ)</span
+            >
+            <button
+              type="button"
+              onclick="openDiseaseModal()"
+              class="text-[10px] font-mono uppercase px-2 py-0.5 bg-brass text-obsidian font-semibold hover:bg-alabaster transition"
+            >
+              Pełna karta ↗
+            </button>
+          </div>
+
+          <!-- 5 Diagnosis Quick Buttons -->
+          <div id="drawerDiseaseButtons" class="space-y-1"></div>
+
+          <!-- Active Scenario Summary -->
+          <div
+            class="p-2.5 bg-obsidian/90 border border-white/10 text-[11px] space-y-1.5"
+          >
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-[10px] text-alabaster/60"
+                >SCHEMAT WIZYT:</span
+              >
+              <span
+                id="drawerDiseaseBadge"
+                class="text-[10px] px-1.5 py-0.5 bg-emerald/20 text-emerald font-mono"
+                >Bardzo wysoka skuteczność</span
+              >
+            </div>
+            <div
+              id="drawerDiseaseSchedule"
+              class="font-semibold text-alabaster"
+            >
+              10–15 sesji (2–3 tygodnie) lub schemat skrócony
+            </div>
+            <div
+              id="drawerDiseaseTests"
+              class="text-alabaster/70 text-[10px] leading-relaxed"
+            ></div>
+          </div>
+        </div>
+
+        <!-- ================= INTERACTIVE 3D TREATMENT PLANNING & APPROVAL (VISIBLE IN CONTROL ROOM) ================= -->
+        <div
+          id="physicsSimBox"
+          class="hidden p-3.5 bg-charcoal border border-clinical/50 space-y-3"
+        >
+          <div class="flex items-center justify-between">
+            <span
+              class="font-mono text-[10px] uppercase tracking-wider text-clinical"
+              >STACJA PLANOWANIA 3D (TECHNIK PAWEŁ)</span
+            >
+            <span
+              id="planStatusBadge"
+              class="px-2 py-0.5 text-[9px] font-mono uppercase bg-amber/20 text-amber border border-amber/40"
+              >DO ZATWIERDZENIA</span
+            >
+          </div>
+
+          <div class="text-[11px] text-alabaster/80">
+            Rozpoznanie:
+            <strong id="tpsDiagnosisLabel" class="text-brass"
+              >01. Guz z komórek tucznych (MCT)</strong
+            >
+          </div>
+
+          <!-- Slider 1: PTV Coverage -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[10px] font-mono">
+              <span class="text-alabaster/75"
+                >1. Pokrycie guza dawką (PTV):</span
+              >
+              <span id="ptvValLabel" class="text-emerald font-bold">98%</span>
+            </div>
+            <input
+              id="ptvSlider"
+              type="range"
+              min="85"
+              max="100"
+              value="98"
+              oninput="updatePlanningMetrics()"
+              class="w-full accent-emerald cursor-pointer h-1.5"
+            />
+          </div>
+
+          <!-- Slider 2: OAR Protection -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[10px] font-mono">
+              <span class="text-alabaster/75"
+                >2. Ochrona narządów (MLC OAR):</span
+              >
+              <span id="oarValLabel" class="text-clinical font-bold"
+                >99% ochrony</span
+              >
+            </div>
+            <input
+              id="oarSlider"
+              type="range"
+              min="80"
+              max="100"
+              value="99"
+              oninput="updatePlanningMetrics()"
+              class="w-full accent-clinical cursor-pointer h-1.5"
+            />
+            <div
+              id="tpsOarTarget"
+              class="text-[10px] text-alabaster/60 font-mono"
+            >
+              Chronione: Gałki oczne, soczewki i zdrowe tkanki
+            </div>
+          </div>
+
+          <!-- Approval Action Button -->
+          <button
+            type="button"
+            id="approvePlanBtn"
+            onclick="approveTreatmentPlan()"
+            class="w-full py-2.5 px-3 bg-emerald text-obsidian font-mono text-xs uppercase tracking-wider font-bold hover:bg-alabaster transition shadow-lg"
+          >
+            ✓ Zatwierdź Plan Leczenia 3D
+          </button>
+        </div>
+
         <!-- Highlighted Technical / Clinical Fact Box -->
         <div
           class="p-3 bg-white/[0.04] border-l-2 border-brass text-xs text-alabaster/90 space-y-1"
@@ -489,34 +787,6 @@
             ZADANIE W TYM KROKU
           </div>
           <div id="drawer-fact-body">Szczegóły zadania...</div>
-        </div>
-
-        <!-- Interactive Physics Dose Simulator (Visible in Control Room Step) -->
-        <div
-          id="physicsSimBox"
-          class="hidden p-3 bg-emerald/10 border border-emerald/40 space-y-2"
-        >
-          <div
-            class="flex items-center justify-between text-[10px] font-mono uppercase text-emerald"
-          >
-            <span>Symulator Wiązki 3D (Technik Paweł)</span>
-            <span id="doseValLabel">98% w guz / 0% oko</span>
-          </div>
-          <input
-            type="range"
-            min="1"
-            max="100"
-            value="98"
-            oninput="
-              document.getElementById('doseValLabel').textContent =
-                this.value + '% precyzji MLC'
-            "
-            class="w-full accent-emerald cursor-pointer"
-          />
-          <p class="text-[11px] text-alabaster/75">
-            Technik elektroradiologii Paweł wraz z fizykiem medycznym modelują
-            wiązkę tak, by ominąć zdrowe narządy i soczewki oczu.
-          </p>
         </div>
       </div>
 
@@ -589,18 +859,98 @@
     <!-- ================= 3D ENGINE & CLINICAL MISSION LOGIC ================= -->
     <script>
       // ============================================================================
-      // 1. PERSONALIZED PATIENT STATE (NAME & SPECIES)
+      // 1. PERSONALIZED PATIENT STATE & 5 ONCOLOGY SCENARIOS (FROM WEBSITE)
       // ============================================================================
       let appMode = "mission"; // 'mission' | 'tour'
       let cameraViewMode = "fpp"; // 'fpp' | 'orbit'
       let currentWaypointIdx = 0;
       let currentMissionStep = 0;
+      let isPlanApproved = false;
 
       const patientProfile = {
         name: "Mruczek",
         species: "cat", // 'cat' | 'dog'
-        weightKg: "4.85 kg"
+        weightKg: "4.85 kg",
+        selectedDiseaseIdx: 0
       };
+
+      const ONCOLOGY_SCENARIOS = [
+        {
+          id: "mct",
+          code: "01",
+          shortNav: "01. Guz z komórek tucznych (Mastocytoma / MCT)",
+          title: "Guz z komórek tucznych (Mastocytoma / MCT)",
+          badge: "Bardzo wysoka skuteczność",
+          desc: "Leczenie pooperacyjne (gdy chirurg nie mógł wyciąć guza z szerokim marginesem) lub naświetlanie guza nieoperacyjnego.",
+          schedule: "10–15 sesji (2–3 tygodnie) lub schemat skrócony",
+          tests: [
+            "Wynik histopatologii z oceną marginesów",
+            "USG jamy brzusznej",
+            "Podstawowe badania krwi i echo serca"
+          ],
+          oar: "Zdrowa skóra właściwa, węzły chłonne i głębokie tkanki miękkie"
+        },
+        {
+          id: "sts",
+          code: "02",
+          shortNav: "02. Mięsak tkanek miękkich / Poiniekcyjny (STS / FISS)",
+          title: "Mięsak tkanek miękkich / Poiniekcyjny (STS / FISS)",
+          badge: "Wysoka kontrola miejscowa",
+          desc: "Naświetlanie blizny pooperacyjnej (szczególnie u kotów z mięsakiem poiniekcyjnym FISS oraz psów z mięsakami STS) w celu zablokowania wznowy lub redukcja guza przed zabiegiem.",
+          schedule: "12–15 sesji (2.5–3 tygodnie) lub schemat skrócony",
+          tests: [
+            "Tomografia komputerowa (TK) obszaru zmiany",
+            "Wynik badania histopatologicznego",
+            "RTG klatki piersiowej oraz badania krwi"
+          ],
+          oar: "Rdzeń kręgowy, płuca oraz sąsiadujące struktury kostne"
+        },
+        {
+          id: "brain",
+          code: "03",
+          shortNav: "03. Guz mózgu lub przysadki (Oponiak / Glejak)",
+          title: "Guz mózgu lub przysadki (Oponiak / Glejak)",
+          badge: "Bardzo wysoka skuteczność",
+          desc: "Bezkrwawa, nieinwazyjna alternatywa dla neurochirurgii. Precyzyjna wiązka niszczy utkanie guza wewnątrz czaszki i cofa objawy neurologiczne bez otwierania czaszki.",
+          schedule: "10–15 sesji (2–3 tygodnie) lub protokół 5 sesji",
+          tests: [
+            "Rezonans magnetyczny (MRI) głowy",
+            "Konsultacja neurologiczna",
+            "Podstawowe badania krwi i echo serca"
+          ],
+          oar: "Skrzyżowanie nerwów wzrokowych, pień mózgu i soczewki oczu"
+        },
+        {
+          id: "nasal",
+          code: "04",
+          shortNav: "04. Guzy jamy nosowej, zatok i jamy ustnej",
+          title: "Guzy jamy nosowej, zatok i jamy ustnej",
+          badge: "Metoda z wyboru (Złoty standard)",
+          desc: "Chirurgia w obrębie jamy nosowej i zatok jest często niemożliwa anatomicznie. Radioterapia megawoltowa pozwala zniszczyć guz przy pełnym zachowaniu kości twarzoczaszki i gałek ocznych.",
+          schedule: "10–15 sesji (2–3 tygodnie) lub schemat paliatywny",
+          tests: [
+            "Tomografia komputerowa (TK) głowy i zatok",
+            "Wynik histopatologii / biopsji z jamy nosowej lub ustnej",
+            "Badania krwi, echo serca i ocena węzłów chłonnych"
+          ],
+          oar: "Gałki oczne, soczewki (0% dawki w soczewkę) oraz mózgowie"
+        },
+        {
+          id: "osa",
+          code: "05",
+          shortNav: "05. Kostniakomięsak (OSA) — Guzy kości",
+          title: "Kostniakomięsak (OSA) — Guzy kości",
+          badge: "Szybki efekt przeciwbólowy",
+          desc: "Radioterapia celowana i paliatywna u pacjentów, u których amputacja kończyny nie jest możliwa. Przynosi szybką ulgę w bólu i wzmacnia strukturę osłabionej kości.",
+          schedule: "2–6 sesji (schemat skrócony / przeciwbólowy)",
+          tests: [
+            "RTG lub TK zajętej kończyny oraz klatki piersiowej",
+            "Badania krwi (profil nerkowy i wątrobowy)",
+            "Konsultacja onkologiczno-ortopedyczna"
+          ],
+          oar: "Zdrowy szpik kostny, sąsiednie stawy i pęczki nerwowe"
+        }
+      ];
 
       function selectPetSpecies(species) {
         patientProfile.species = species;
@@ -627,6 +977,7 @@
             nameInput.value = "Burek";
           }
         }
+        renderOncologySelectors();
       }
 
       function openWelcomeModal() {
@@ -650,22 +1001,215 @@
           radarLbl.textContent = `${icon} Pacjent: ${patientProfile.name}`;
         }
 
-        // Przebuduj model 3D pacjenta pod wybrany gatunek (kot lub pies)
         rebuildMissionPetMesh();
+        renderOncologySelectors();
 
         document.getElementById("welcomeModal").classList.add("hidden");
         switchAppMode(mode);
       }
 
+      function selectDiseaseScenario(idx) {
+        patientProfile.selectedDiseaseIdx = idx;
+        renderOncologySelectors();
+        if (appMode === "mission") {
+          refreshCurrentMissionUI();
+        }
+      }
+
+      function switchModalSpecies(species) {
+        selectPetSpecies(species);
+        const icon = patientProfile.species === "cat" ? "🐈" : "🐕";
+        document.getElementById("hud-pet-badge").textContent =
+          `${icon} ${patientProfile.name}`;
+        rebuildMissionPetMesh();
+      }
+
+      function openDiseaseModal() {
+        renderOncologySelectors();
+        document.getElementById("diseaseModal").classList.remove("hidden");
+      }
+
+      function closeDiseaseModal() {
+        document.getElementById("diseaseModal").classList.add("hidden");
+        if (appMode === "mission") {
+          refreshCurrentMissionUI();
+        }
+      }
+
+      function renderOncologySelectors() {
+        const active = ONCOLOGY_SCENARIOS[patientProfile.selectedDiseaseIdx];
+        const isCat = patientProfile.species === "cat";
+
+        // 1. Drawer quick buttons
+        const drawerList = document.getElementById("drawerDiseaseButtons");
+        if (drawerList) {
+          drawerList.innerHTML = ONCOLOGY_SCENARIOS.map((sc, i) => {
+            const isSel = i === patientProfile.selectedDiseaseIdx;
+            return `
+              <button
+                type="button"
+                onclick="selectDiseaseScenario(${i})"
+                class="w-full text-left px-2.5 py-1.5 text-[11px] font-sans flex items-center justify-between transition ${
+                  isSel
+                    ? "bg-brass text-obsidian font-semibold"
+                    : "bg-obsidian/60 text-alabaster/80 hover:bg-white/10"
+                }"
+              >
+                <span class="truncate pr-2">${sc.shortNav}</span>
+                <span>→</span>
+              </button>
+            `;
+          }).join("");
+        }
+
+        const dBadge = document.getElementById("drawerDiseaseBadge");
+        const dSched = document.getElementById("drawerDiseaseSchedule");
+        const dTests = document.getElementById("drawerDiseaseTests");
+        if (dBadge) dBadge.textContent = active.badge;
+        if (dSched) dSched.textContent = active.schedule;
+        if (dTests) {
+          dTests.innerHTML = active.tests.map((t) => `• ${t}`).join("<br/>");
+        }
+
+        // 2. Full Website Modal
+        const modalDogBtn = document.getElementById("modalSpecBtn-dog");
+        const modalCatBtn = document.getElementById("modalSpecBtn-cat");
+        if (modalDogBtn && modalCatBtn) {
+          modalDogBtn.className = !isCat
+            ? "py-2.5 font-mono text-xs uppercase tracking-wider transition bg-[#141413] text-white font-semibold"
+            : "py-2.5 font-mono text-xs uppercase tracking-wider transition text-black/70 hover:text-black";
+          modalCatBtn.className = isCat
+            ? "py-2.5 font-mono text-xs uppercase tracking-wider transition bg-[#141413] text-white font-semibold"
+            : "py-2.5 font-mono text-xs uppercase tracking-wider transition text-black/70 hover:text-black";
+        }
+
+        const modalList = document.getElementById("modalDiseaseList");
+        if (modalList) {
+          modalList.innerHTML = ONCOLOGY_SCENARIOS.map((sc, i) => {
+            const isSel = i === patientProfile.selectedDiseaseIdx;
+            return `
+              <button
+                type="button"
+                onclick="selectDiseaseScenario(${i})"
+                class="w-full text-left px-4 py-3.5 text-xs sm:text-sm border transition flex items-center justify-between ${
+                  isSel
+                    ? "bg-[#141413] text-white border-[#141413] font-medium shadow-md"
+                    : "bg-white text-[#141413] border-black/15 hover:border-black/40"
+                }"
+              >
+                <span>${sc.shortNav}</span>
+                <span class="ml-2">→</span>
+              </button>
+            `;
+          }).join("");
+        }
+
+        const mPetName = document.getElementById("modalPetNameLabel");
+        const mSpecies = document.getElementById("modalRightSpecies");
+        const mBadge = document.getElementById("modalRightBadge");
+        const mTitle = document.getElementById("modalRightTitle");
+        const mDesc = document.getElementById("modalRightDesc");
+        const mSched = document.getElementById("modalRightSchedule");
+        const mTests = document.getElementById("modalRightTests");
+        const mOar = document.getElementById("modalRightOAR");
+
+        if (mPetName) mPetName.textContent = patientProfile.name;
+        if (mSpecies) mSpecies.textContent = isCat ? "KOT" : "PIES";
+        if (mBadge) mBadge.textContent = active.badge;
+        if (mTitle) mTitle.textContent = active.title;
+        if (mDesc) mDesc.textContent = active.desc;
+        if (mSched) mSched.textContent = active.schedule;
+        if (mTests) {
+          mTests.innerHTML = active.tests
+            .map(
+              (t) =>
+                `<li class="flex items-start gap-1.5"><span>•</span><span>${t}</span></li>`
+            )
+            .join("");
+        }
+        if (mOar) mOar.textContent = active.oar;
+
+        // 3. Update TPS labels in Step 6
+        const tpsDiag = document.getElementById("tpsDiagnosisLabel");
+        const tpsOar = document.getElementById("tpsOarTarget");
+        if (tpsDiag) tpsDiag.textContent = active.shortNav;
+        if (tpsOar) tpsOar.textContent = `Chronione OAR: ${active.oar}`;
+      }
+
       // ============================================================================
-      // 2. DYNAMIC MISSION STEPS & 8 TOUR WAYPOINTS
+      // 2. TREATMENT PLANNING APPROVAL LOGIC (STEP 6 - TECHNICIAN PAWEŁ)
+      // ============================================================================
+      let consoleScreenMeshes = [];
+
+      function updatePlanningMetrics() {
+        const ptv = document.getElementById("ptvSlider").value;
+        const oar = document.getElementById("oarSlider").value;
+        document.getElementById("ptvValLabel").textContent =
+          `${ptv}% dawki w guz`;
+        document.getElementById("oarValLabel").textContent =
+          `${oar}% ochrony OAR`;
+      }
+
+      function approveTreatmentPlan() {
+        isPlanApproved = true;
+        const badge = document.getElementById("planStatusBadge");
+        const btn = document.getElementById("approvePlanBtn");
+        const activeDisease =
+          ONCOLOGY_SCENARIOS[patientProfile.selectedDiseaseIdx];
+
+        if (badge) {
+          badge.textContent = "ZATWIERDZONY ✓";
+          badge.className =
+            "px-2 py-0.5 text-[9px] font-mono uppercase bg-emerald/20 text-emerald border border-emerald/50 font-semibold";
+        }
+        if (btn) {
+          btn.textContent = "✓ Plan 3D zatwierdzony (Dr Jaśkiewicz i Fizyk)";
+          btn.className =
+            "w-full py-2.5 px-3 bg-emerald/25 border border-emerald text-emerald font-mono text-xs uppercase tracking-wider font-bold cursor-default";
+        }
+
+        // Update 3D monitors in Control Room to bright approved emerald
+        consoleScreenMeshes.forEach((mesh) => {
+          mesh.material.color.setHex(0x10b981);
+        });
+
+        document.getElementById("mission-cat-status").textContent =
+          `Plan 3D zatwierdzony (${activeDisease.code}) ✓`;
+        document.getElementById("drawer-next-btn").textContent =
+          "Plan zatwierdzony! Wejdź do Bunkra →";
+      }
+
+      function resetPlanApprovalUI() {
+        const badge = document.getElementById("planStatusBadge");
+        const btn = document.getElementById("approvePlanBtn");
+        if (!badge || !btn) return;
+
+        if (isPlanApproved) {
+          badge.textContent = "ZATWIERDZONY ✓";
+          badge.className =
+            "px-2 py-0.5 text-[9px] font-mono uppercase bg-emerald/20 text-emerald border border-emerald/50 font-semibold";
+          btn.textContent = "✓ Plan 3D zatwierdzony (Dr Jaśkiewicz i Fizyk)";
+          btn.className =
+            "w-full py-2.5 px-3 bg-emerald/25 border border-emerald text-emerald font-mono text-xs uppercase tracking-wider font-bold";
+        } else {
+          badge.textContent = "DO ZATWIERDZENIA";
+          badge.className =
+            "px-2 py-0.5 text-[9px] font-mono uppercase bg-amber/20 text-amber border border-amber/40";
+          btn.textContent = "✓ Zatwierdź Plan Leczenia 3D";
+          btn.className =
+            "w-full py-2.5 px-3 bg-emerald text-obsidian font-mono text-xs uppercase tracking-wider font-bold hover:bg-alabaster transition shadow-lg";
+        }
+      }
+
+      // ============================================================================
+      // 3. DYNAMIC MISSION STEPS & 8 TOUR WAYPOINTS
       // ============================================================================
       function getMissionSteps() {
         const n = patientProfile.name;
         const isCat = patientProfile.species === "cat";
-        const speciesNoun = isCat ? "kot" : "pies";
         const speciesGen = isCat ? "kota" : "psa";
         const w = patientProfile.weightKg;
+        const disease = ONCOLOGY_SCENARIOS[patientProfile.selectedDiseaseIdx];
 
         return [
           {
@@ -705,11 +1249,11 @@
             lookAt: { x: -14.2, z: 6.5 },
             petPos: { x: -14.2, y: 0.9, z: 6.2, inCarrier: false },
             code: "MISJA PACJENTA • KROK 3 Z 7",
-            status: "Konsultacja u dr Anny Jaśkiewicz",
-            title: `3. Konsultacja onkologiczna — dr Anna Jaśkiewicz`,
-            desc: `${n} znajduje się na stole diagnostycznym. Lekarz onkolog dr Anna Jaśkiewicz bada pacjenta, analizuje wyniki histopatologii na negatoskopach i kwalifikuje ${speciesGen} do precyzyjnej radioterapii.`,
-            factTitle: "OPIEKA DR ANNY JAŚKIEWICZ",
-            factBody: `Dr Anna Jaśkiewicz szczegółowo tłumaczy Ci plan leczenia i codziennie kontroluje samopoczucie pupila (${n}) podczas całego cyklu naświetlań.`,
+            status: `Rozpoznanie: ${disease.title}`,
+            title: `3. Konsultacja i wybór scenariusza — dr Anna Jaśkiewicz`,
+            desc: `${n} znajduje się na stole diagnostycznym. Lekarz onkolog dr Anna Jaśkiewicz bada pacjenta i omawia z Tobą rozpoznanie: ${disease.title}. Wybierz poniżej jeden z 5 scenariuszy klinicznych lub otwórz pełną kartę kwalifikacji.`,
+            factTitle: `KWALIFIKACJA: ${disease.title.toUpperCase()}`,
+            factBody: `${disease.desc} Typowy schemat: ${disease.schedule}.`,
             btnText: `Przejdź do anestezjolog Emilii Sulik (O₂) →`,
             img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80"
           },
@@ -737,10 +1281,10 @@
             code: "MISJA PACJENTA • KROK 5 Z 7",
             status: "Skanowanie 3D na palecie RT",
             title: `5. Tomografia Komputerowa 3D i Materac Próżniowy`,
-            desc: `Układamy śpiącego pacjenta (${n}) na złotej palecie RT i indywidualnym materacu próżniowym, który zapamiętuje kształt ciała. Lasery pozycjonujące wyznaczają izocentrum, a tomograf wykonuje skan 3D.`,
+            desc: `Układamy śpiącego pacjenta (${n}) na złotej palecie RT i indywidualnym materacu próżniowym, który zapamiętuje kształt ciała. Lasery wyznaczają izocentrum dla zmiany: ${disease.title}.`,
             factTitle: "SYSTEM POZYCJONOWANIA 1:1",
-            factBody: `Identyczna paleta RT znajduje się na stole akceleratora — dzięki temu podczas każdego zabiegu ${n} leży z dokładnością poniżej 1 milimetra.`,
-            btnText: `Zobacz planowanie u technika Pawła →`,
+            factBody: `Identyczna paleta RT znajduje się na stole akceleratora — dzięki temu podczas każdego z zaplanowanych zabiegów (${disease.schedule}) ${n} leży z dokładnością poniżej 1 mm.`,
+            btnText: `Przejdź do zatwierdzenia planu u Pawła →`,
             img: "https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/tomograf-scaled_light.jpg"
           },
           {
@@ -750,26 +1294,30 @@
             lookAt: { x: 3.8, z: 8.8 },
             petPos: { x: 4.2, y: 0.85, z: -7.7, inCarrier: false },
             code: "MISJA PACJENTA • KROK 6 Z 7",
-            status: "Planowanie wiązki: Technik Paweł",
-            title: `6. Sterownia — Technik Paweł i Planowanie Wiązki 3D`,
-            desc: `W sterowni technik elektroradiologii Paweł wraz z fizykiem medycznym i dr Anną Jaśkiewicz obrysowują na skanach TK guz oraz narządy krytyczne. Z tego miejsca Paweł steruje również pracą akceleratora i obserwuje pacjenta na kamerach HD.`,
-            factTitle: "INTERAKTYWNA KONSOLA TECHNIKA PAWŁA",
-            factBody: `Przesuń suwak poniżej, aby zobaczyć jak kolimator wielolistkowy (MLC) kształtuje pole napromieniania z milimetrową precyzją.`,
-            btnText: `Wejdź przez Labirynt do Bunkra →`,
+            status: isPlanApproved
+              ? `Plan 3D zatwierdzony (${disease.code}) ✓`
+              : "Oczekuje na zatwierdzenie planu 3D",
+            title: `6. Sterownia — Zatwierdzanie Planowania 3D (Technik Paweł)`,
+            desc: `Technik elektroradiologii Paweł wraz z fizykiem medycznym i dr Anną Jaśkiewicz przygotowali plan wiązki 3D dla rozpoznania: ${disease.title}. Sprawdź ochronę narządów krytycznych (${disease.oar}) i zatwierdź plan leczenia.`,
+            factTitle: "OBOWIĄZKOWA WERYFIKACJA I AKCEPTACJA PLANU",
+            factBody: `Dopiero po zatwierdzeniu planu 3D przez fizyka medycznego i lekarza onkologa parametry kolimatora wielolistkowego (MLC) są przesyłane do akceleratora w bunkrze.`,
+            btnText: isPlanApproved
+              ? `Plan zatwierdzony! Wejdź do Bunkra →`
+              : `Zatwierdź plan 3D i wejdź do Bunkra →`,
             img: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=900&q=80"
           },
           {
             step: 6,
             waypointIdx: 6,
-            pos: { x: 14.5, z: -3.8 },
-            lookAt: { x: 15.2, z: -8.2 },
-            petPos: { x: 15.2, y: 0.92, z: -7.3, inCarrier: false },
+            pos: { x: 14.2, z: -3.5 },
+            lookAt: { x: 15.2, z: -7.8 },
+            petPos: { x: 15.2, y: 0.94, z: -7.1, inCarrier: false },
             code: "MISJA PACJENTA • KROK 7 Z 7",
             status: `${n}: Bezbolesna sesja RT (10 min)`,
             title: `7. Bunkier Akceleratora Liniowego — Zabieg i Wybudzenie`,
-            desc: `Przechodzisz przez żelbetowy labirynt radiologiczny do serca instytutu. ${n} leży na stole akceleratora, a głowica (gantry 360°) obraca się bezgłośnie wokół niego. Anestezjolog Emilia Sulik i technik Paweł monitorują parametry na ekranach HD.`,
+            desc: `Jesteś w profesjonalnym bunkrze medycznego akceleratora liniowego. ${n} spoczywa na stole 6DoF w zielonych laserach izocentrum, a głowica (gantry 360°) realizuje zatwierdzony plan leczenia (${disease.title}). Anestezjolog Emilia Sulik i technik Paweł monitorują parametry życiowe na kamerach HD.`,
             factTitle: "PO ZABIEGU ZWIERZĘ NIE PROMIENIUJE (0%)",
-            factBody: `Wiązka megawoltowa działa wyłącznie w ułamku sekundy włączenia aparatu. Po 10 minutach zabierasz wybudzonego pupila (${n}) na spacer do lasu lub do pokoju hotelowego!`,
+            factBody: `Wiązka megawoltowa działa wyłącznie w momencie włączenia aparatu. Po 10 minutach zabierasz wybudzonego pupila (${n}) na spacer do lasu lub do pokoju hotelowego!`,
             btnText: `Zakończ w Pokoju Hotelowym →`,
             img: "https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/akcelerator-scaled_light.jpg"
           }
@@ -797,10 +1345,10 @@
           nav: "02. Dr Jaśkiewicz",
           code: "STREFA 02 / 08 — KONSULTACJA ONKOLOGICZNA",
           title: "Gabinet Lekarza Onkologa — dr Anna Jaśkiewicz",
-          desc: "W tym gabinecie spotka się z Państwem i Waszym pupilem dr Anna Jaśkiewicz, specjalizująca się w onkologii weterynaryjnej. Przy biurku i negatoskopach omawiamy plan leczenia.",
+          desc: "W tym gabinecie spotka się z Państwem i Waszym pupilem dr Anna Jaśkiewicz, specjalizująca się w onkologii weterynaryjnej. Przy biurku i negatoskopach omawiamy 5 scenariuszy leczenia.",
           factTitle: "KONSYLIUM I KWALIFIKACJA",
           factBody:
-            "Dr Anna Jaśkiewicz bada pacjenta przed cyklem naświetlań i codziennie kontroluje jego samopoczucie w trakcie pobytu w Ośrodku.",
+            "Możesz przejrzeć wszystkie 5 rozpoznań onkologicznych (Mastocytoma, Mięsaki STS/FISS, Guzy mózgu, Guzy jamy nosowej oraz Kostniakomięsak OSA).",
           img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80"
         },
         {
@@ -834,12 +1382,12 @@
           pos: { x: 3.8, z: 4.8 },
           lookAt: { x: 3.8, z: 9.2 },
           nav: "05. Sterownia (Paweł)",
-          code: "STREFA 05 / 08 — TECHNIK PAWEŁ I FIZYK MEDYCZNY",
+          code: "STREFA 05 / 08 — TECHNIK PAWEŁ I ZATWIERDZANIE PLANU",
           title: "Sterownia Tomografu i Akceleratora — Technik Paweł",
-          desc: "Z tego pomieszczenia technik elektroradiologii Paweł wraz z fizykiem medycznym sterują tomografem oraz akceleratorem liniowym, konturując guz i narządy krytyczne na stacjach 3D.",
+          desc: "Z tego pomieszczenia technik elektroradiologii Paweł wraz z fizykiem medycznym sterują tomografem oraz akceleratorem liniowym, konturując guz i zatwierdzając plan wiązki 3D.",
           factTitle: "KAMERY HD I TELEMETRIA NA ŻYWO",
           factBody:
-            "Przez potężne żelbetowe ściany bunkra nie można wstawić zwykłego okna — dlatego technik Paweł i anestezjolog Emilia Sulik obserwują pacjenta na żywo przez system kamer HD.",
+            "Przez żelbetowe ściany bunkra nie można wstawić zwykłego okna — dlatego technik Paweł i anestezjolog Emilia Sulik obserwują pacjenta na żywo przez system kamer HD.",
           img: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=900&q=80"
         },
         {
@@ -848,21 +1396,21 @@
           lookAt: { x: 10.5, z: -2 },
           nav: "06. Labirynt",
           code: "STREFA 06 / 08 — INŻYNIERIA RADIOLOGICZNA",
-          title: "Labirynt Bunkra — Po co nam labirynt?",
-          desc: "Stoisz w żelbetowym korytarzu prowadzącym do bunkra. Zwróć uwagę na załamanie muru przed Tobą — to kluczowy element ochrony radiologicznej.",
+          title: "Labirynt Bunkra — Ochrona Radiologiczna",
+          desc: "Stoisz w korytarzu ochronnym prowadzącym do bunkra akceleratora. Zwróć uwagę na kaseton ostrzegawczy oraz załamanie muru — to kluczowy element osłony radiologicznej.",
           factTitle: "DLACZEGO KORYTARZ ZAKRĘCA?",
           factBody:
-            "Promieniowanie rozproszone biegnie po liniach prostych i rozbija się o żelbetową ścianę labiryntu, dzięki czemu NIGDY nie trafia w drzwi wejściowe.",
+            "Promieniowanie rozproszone biegnie po liniach prostych i jest pochłaniane przez ściany labiryntu, dzięki czemu nie dociera do wejścia.",
           img: "https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/akcelerator-scaled_light.jpg"
         },
         {
           id: 6,
-          pos: { x: 14.5, z: -3.8 },
-          lookAt: { x: 15.2, z: -8.5 },
+          pos: { x: 14.2, z: -3.5 },
+          lookAt: { x: 15.2, z: -8.0 },
           nav: "07. Akcelerator",
           code: "STREFA 07 / 08 — SERCE INSTYTUTU RTWET",
           title: "Bunkier Medycznego Akceleratora Liniowego",
-          desc: "Przed Tobą stoi medyczny akcelerator liniowy z obracającym się ramieniem (gantry 360°), ruchomym stołem terapeutycznym oraz stanowiskiem do sedacji wziewnej i monitoringu.",
+          desc: "Profesjonalna sala akceleratora liniowego z głowicą 360° (gantry), ramionami obrazowania CBCT, zielonymi laserami pozycjonującymi 3D, stołem 6DoF, pełnym stanowiskiem anestezjologicznym i kamerami HD.",
           factTitle: "WIĄZKA MEGAWOLTOWA W 10 MINUT",
           factBody:
             "Głowica obraca się wokół stołu, skupiając wiązkę dokładnie w guzie i oszczędzając zdrowe narządy. Po wyjściu z bunkra zwierzę nie promieniuje (0%).",
@@ -884,12 +1432,12 @@
       ];
 
       // ============================================================================
-      // 3. INITIALIZE THREE.JS SCENE, CAMERA & LIGHTING
+      // 4. INITIALIZE THREE.JS SCENE, CAMERA & LIGHTING
       // ============================================================================
       const container = document.getElementById("webgl-container");
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x1c1b19);
-      scene.fog = new THREE.FogExp2(0x1c1b19, 0.008);
+      scene.fog = new THREE.FogExp2(0x1c1b19, 0.0075);
 
       const camera = new THREE.PerspectiveCamera(
         60,
@@ -911,7 +1459,6 @@
       let targetPitch = -0.05;
       let walkBobTimer = 0;
 
-      // Orbit Camera State
       const orbitCenter = new THREE.Vector3(0, 0, 0);
       let orbitRadius = 26;
       let orbitTheta = 0.25;
@@ -926,10 +1473,10 @@
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.06;
+      renderer.toneMappingExposure = 1.08;
       container.appendChild(renderer.domElement);
 
-      const hemiLight = new THREE.HemisphereLight(0xfff8ed, 0x3a3228, 0.54);
+      const hemiLight = new THREE.HemisphereLight(0xfff8ed, 0x3a3228, 0.56);
       hemiLight.position.set(0, 15, 0);
       scene.add(hemiLight);
 
@@ -982,14 +1529,15 @@
       addCeilingLight(-4.0, -6.5, 0xf0f9ff, 1.1, 15);
       addCeilingLight(4.2, -6.5, 0xdbeafe, 1.1, 15);
       addCeilingLight(3.8, 6.5, 0xe0f2fe, 1.0, 15);
-      addCeilingLight(10.5, 3.5, 0xfde68a, 0.9, 14);
-      addCeilingLight(15.0, -6.0, 0xdbeafe, 1.25, 16);
+      addCeilingLight(10.5, 3.5, 0xfff4d6, 0.95, 14);
+      addCeilingLight(15.5, -6.5, 0xf0f9ff, 1.45, 18); // Jasne, czyste oświetlenie kliniczne w bunkrze
+      addCeilingLight(15.5, -1.5, 0xe0f2fe, 1.1, 15);
       addCeilingLight(-4.5, 7.0, 0xffe4b5, 1.15, 15);
       addCeilingLight(-6.5, 0, 0xfff2db, 0.85, 14);
       addCeilingLight(2.5, 0, 0xfff2db, 0.85, 14);
 
       // ============================================================================
-      // 4. PROCEDURAL TEXTURES & ARCHITECTURAL MATERIALS
+      // 5. PROCEDURAL TEXTURES & CLEAN ARCHITECTURAL MATERIALS (NO LOCKER ARTIFACTS)
       // ============================================================================
       function createRichWoodFloorTexture() {
         const c = document.createElement("canvas");
@@ -1030,38 +1578,49 @@
         ctx.fillStyle = baseHex;
         ctx.fillRect(0, 0, 256, 256);
         ctx.strokeStyle = lineHex;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1;
         ctx.strokeRect(0, 0, 256, 256);
         const tex = new THREE.CanvasTexture(c);
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(3, 1);
+        tex.repeat.set(2, 1);
         return tex;
       }
 
-      function createConcreteBunkerTexture() {
+      // Nowoczesna okładzina ścienna bunkra medycznego: jasny kamień kliniczny z poziomym pasem dębowo-mosiężnym (ZERO szafek i kropek!)
+      function createMedicalVaultWallTexture() {
         const c = document.createElement("canvas");
-        c.width = 256;
-        c.height = 256;
+        c.width = 512;
+        c.height = 512;
         const ctx = c.getContext("2d");
-        ctx.fillStyle = "#6e7371";
-        ctx.fillRect(0, 0, 256, 256);
-        ctx.strokeStyle = "#4a4e4c";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(3, 3, 250, 122);
-        ctx.strokeRect(3, 131, 250, 122);
-        ctx.fillStyle = "#363938";
-        [36, 220].forEach((x) => {
-          [64, 192].forEach((y) => {
-            ctx.beginPath();
-            ctx.arc(x, y, 5, 0, Math.PI * 2);
-            ctx.fill();
-          });
-        });
+
+        // Jasna, sterylna szaro-alabastrowa powierzchnia ściany osłonowej
+        ctx.fillStyle = "#E6E4DF";
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Delikatny, ledwo widoczny szum mineralny (beton architektoniczny gładki)
+        for (let i = 0; i < 600; i++) {
+          ctx.fillStyle =
+            i % 2 === 0 ? "rgba(255,255,255,0.18)" : "rgba(120,115,108,0.08)";
+          const rx = (i * 73) % 512;
+          const ry = (i * 137) % 512;
+          ctx.fillRect(rx, ry, 4, 4);
+        }
+
+        // Dolna strefa lamperii medycznej w ciepłym odcieniu kamienia
+        ctx.fillStyle = "#D8D4CC";
+        ctx.fillRect(0, 310, 512, 202);
+
+        // Elegancka pozioma listwa odbojowo-akustyczna (dąb + mosiądz) w połowie wysokości ściany
+        ctx.fillStyle = "#C5A67C";
+        ctx.fillRect(0, 296, 512, 16);
+        ctx.fillStyle = "#8C6D46";
+        ctx.fillRect(0, 310, 512, 4);
+
         const tex = new THREE.CanvasTexture(c);
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(4, 2);
+        tex.repeat.set(2, 1);
         return tex;
       }
 
@@ -1078,25 +1637,25 @@
 
       const WALL_MATERIALS = {
         interior: new THREE.MeshStandardMaterial({
-          map: createSubtleWallTexture("#F2EFE9", "#E2DDD2"),
+          map: createSubtleWallTexture("#F2EFE9", "#E6E1D8"),
           roughness: 0.75
         }),
         sage: new THREE.MeshStandardMaterial({
-          map: createSubtleWallTexture("#2E443B", "#23352E"),
+          map: createSubtleWallTexture("#2E443B", "#263931"),
           roughness: 0.7
         }),
         navy: new THREE.MeshStandardMaterial({
-          map: createSubtleWallTexture("#273647", "#1D2936"),
+          map: createSubtleWallTexture("#273647", "#202D3B"),
           roughness: 0.65
         }),
         hotel: new THREE.MeshStandardMaterial({
-          map: createSubtleWallTexture("#5A4638", "#48372B"),
+          map: createSubtleWallTexture("#5A4638", "#4D3B2F"),
           roughness: 0.75
         }),
         bunker: new THREE.MeshStandardMaterial({
-          map: createConcreteBunkerTexture(),
-          roughness: 0.82,
-          metalness: 0.08
+          map: createMedicalVaultWallTexture(),
+          roughness: 0.55,
+          metalness: 0.04
         })
       };
 
@@ -1124,8 +1683,8 @@
       });
       const medicalWhiteMat = new THREE.MeshStandardMaterial({
         color: 0xfafaf9,
-        roughness: 0.22,
-        metalness: 0.1
+        roughness: 0.2,
+        metalness: 0.12
       });
       const glassMat = new THREE.MeshStandardMaterial({
         color: 0xbae6fd,
@@ -1151,7 +1710,6 @@
         roughness: 0.5
       });
 
-      // Floor & Ceiling
       const floorGeo = new THREE.PlaneGeometry(42, 30);
       const floorMesh = new THREE.Mesh(floorGeo, floorMat);
       floorMesh.rotation.x = -Math.PI / 2;
@@ -1164,7 +1722,7 @@
       scene.add(ceilingMesh);
 
       // ============================================================================
-      // 5. CLINIC ARCHITECTURAL LAYOUT & DETAILED PREFAB BUILDERS
+      // 6. CLINIC ARCHITECTURAL LAYOUT & DETAILED PREFAB BUILDERS
       // ============================================================================
       const CLINIC_WORLD = {
         walls: [
@@ -1177,14 +1735,14 @@
             x2: 19,
             z2: -12,
             style: "bunker",
-            thickness: 0.8
+            thickness: 0.75
           },
           { x1: -17, z1: 12, x2: -8, z2: 12, style: "sage", thickness: 0.26 },
           { x1: -8, z1: 12, x2: 0, z2: 12, style: "hotel", thickness: 0.26 },
           { x1: 0, z1: 12, x2: 8.5, z2: 12, style: "navy", thickness: 0.26 },
           { x1: 8.5, z1: 12, x2: 19, z2: 12, style: "bunker", thickness: 0.4 },
           { x1: -17, z1: -12, x2: -17, z2: 12, style: "sage", thickness: 0.26 },
-          { x1: 19, z1: -12, x2: 19, z2: 12, style: "bunker", thickness: 0.9 },
+          { x1: 19, z1: -12, x2: 19, z2: 12, style: "bunker", thickness: 0.85 },
 
           // Ściany wewnętrzne działowe
           {
@@ -1298,7 +1856,7 @@
             x2: 8.5,
             z2: 12,
             style: "bunker",
-            thickness: 0.7
+            thickness: 0.65
           },
           {
             x1: 0,
@@ -1317,14 +1875,14 @@
             thickness: 0.24
           },
 
-          // Labirynt i Bunkier Akceleratora
+          // Labirynt i Bunkier Akceleratora (gładkie ściany radiologiczne)
           {
             x1: 12.2,
-            z1: -4.5,
+            z1: -4.2,
             x2: 12.2,
-            z2: 7.5,
+            z2: 7.2,
             style: "bunker",
-            thickness: 1.15
+            thickness: 0.95
           },
           {
             x1: 8.5,
@@ -1332,7 +1890,7 @@
             x2: 19,
             z2: 9.5,
             style: "bunker",
-            thickness: 0.8
+            thickness: 0.75
           }
         ],
         objects: [
@@ -1383,9 +1941,11 @@
           { type: "staff_pawel", x: 3.8, z: 7.6, rotY: 0 },
           { type: "potted_plant", x: 0.8, z: 10.8, rotY: 0 },
 
-          // Strefa 07: Bunkier Akceleratora
+          // Strefa 06 & 07: Profesjonalny Bunkier Akceleratora Liniowego i Labirynt
+          { type: "labyrinth_warning_gate", x: 10.35, z: 1.5, rotY: 0 },
           { type: "linac_vault", x: 15.2, z: -8.2, rotY: 0 },
-          { type: "anesthesia_cart", x: 17.5, z: -6.8, rotY: -0.5 },
+          { type: "anesthesia_cart", x: 17.6, z: -6.6, rotY: -0.6 },
+          { type: "vault_interior_architecture", x: 15.2, z: -6.5, rotY: 0 },
 
           // Strefa 08: Pokój Hotelowy
           { type: "hotel_bed", x: -5.5, z: 9.5, rotY: Math.PI / 2 },
@@ -1453,12 +2013,12 @@
         return group;
       }
 
-      // Reusable Human Character Builder with distinct hair styles
+      // Reusable Human Character Builder
       function buildHumanCharacter({
         coatColor,
         scrubColor,
         hairColor,
-        hairStyle = "bun", // 'bun' | 'shoulder_blonde' | 'curly' | 'short_male'
+        hairStyle = "bun",
         hasStethoscope = false,
         hasGlasses = false,
         hasClipboard = false
@@ -1481,7 +2041,6 @@
           roughness: 0.65
         });
 
-        // Legs
         [-0.1, 0.1].forEach((lx) => {
           const leg = new THREE.Mesh(
             new THREE.CylinderGeometry(0.065, 0.055, 0.78, 12),
@@ -1492,7 +2051,6 @@
           g.add(leg);
         });
 
-        // Torso
         const torso = new THREE.Mesh(
           new THREE.CylinderGeometry(0.19, 0.17, 0.68, 16),
           coatMat
@@ -1501,7 +2059,6 @@
         torso.castShadow = true;
         g.add(torso);
 
-        // V-neck inner scrub / blouse
         const vNeck = new THREE.Mesh(
           new THREE.BoxGeometry(0.14, 0.28, 0.22),
           innerMat
@@ -1509,7 +2066,6 @@
         vNeck.position.set(0, 1.25, 0.09);
         g.add(vNeck);
 
-        // Arms
         [-0.23, 0.23].forEach((ax, idx) => {
           const arm = new THREE.Mesh(
             new THREE.CylinderGeometry(0.05, 0.045, 0.58, 12),
@@ -1532,7 +2088,6 @@
           g.add(hand);
         });
 
-        // Optional clipboard (for Anesthesiologist Emilia Sulik)
         if (hasClipboard) {
           const board = new THREE.Mesh(
             new THREE.BoxGeometry(0.22, 0.3, 0.02),
@@ -1552,7 +2107,6 @@
           g.add(sheet);
         }
 
-        // Head
         const head = new THREE.Mesh(
           new THREE.SphereGeometry(0.145, 18, 16),
           skinMat
@@ -1561,7 +2115,6 @@
         head.castShadow = true;
         g.add(head);
 
-        // Eyes
         [-0.048, 0.048].forEach((ex) => {
           const eye = new THREE.Mesh(
             new THREE.SphereGeometry(0.016, 8, 8),
@@ -1571,7 +2124,6 @@
           g.add(eye);
         });
 
-        // Optional Glasses (for Technician Paweł)
         if (hasGlasses) {
           [-0.052, 0.052].forEach((gx) => {
             const rim = new THREE.Mesh(
@@ -1583,9 +2135,7 @@
           });
         }
 
-        // Hair styles
         if (hairStyle === "shoulder_blonde") {
-          // Dr Anna Jaśkiewicz: blond włosy do ramion
           const topCap = new THREE.Mesh(
             new THREE.SphereGeometry(
               0.156,
@@ -1620,7 +2170,6 @@
           backHair.castShadow = true;
           g.add(backHair);
         } else if (hairStyle === "curly") {
-          // Anestezjolog Emilia Sulik: bujne kręcone włosy z lokami wokół głowy i ramion
           const curlOffsets = [
             [0, 1.71, 0, 0.075],
             [-0.09, 1.69, 0.04, 0.068],
@@ -1648,7 +2197,6 @@
             g.add(curl);
           });
         } else if (hairStyle === "short_male") {
-          // Technik Paweł: krótka męska fryzura z przedziałkiem
           const hairCap = new THREE.Mesh(
             new THREE.SphereGeometry(
               0.152,
@@ -1672,7 +2220,6 @@
           frontQuiff.rotation.x = -0.2;
           g.add(frontQuiff);
         } else {
-          // Pani Marzena: elegancki kok
           const hairCap = new THREE.Mesh(
             new THREE.SphereGeometry(
               0.152,
@@ -2039,15 +2586,6 @@
             );
             glassFront.position.set(0, 1.32, 0.25);
             g.add(glassFront);
-
-            [-0.08, 0.08].forEach((hx) => {
-              const handle = new THREE.Mesh(
-                new THREE.BoxGeometry(0.02, 0.28, 0.04),
-                brassMat
-              );
-              handle.position.set(hx, 1.2, 0.27);
-              g.add(handle);
-            });
             break;
           }
 
@@ -2229,6 +2767,7 @@
             desk.castShadow = true;
             g.add(desk);
 
+            consoleScreenMeshes = [];
             [-1.2, 0, 1.2].forEach((ox, idx) => {
               const bezel = new THREE.Mesh(
                 new THREE.BoxGeometry(0.96, 0.6, 0.04),
@@ -2237,92 +2776,375 @@
               bezel.position.set(ox, 1.16, -0.18);
               g.add(bezel);
 
+              const monMat = new THREE.MeshBasicMaterial({
+                color: idx === 1 ? 0x10b981 : 0x38bdf8
+              });
               const mon = new THREE.Mesh(
                 new THREE.BoxGeometry(0.88, 0.52, 0.05),
-                new THREE.MeshBasicMaterial({
-                  color: idx === 1 ? 0x10b981 : 0x38bdf8
-                })
+                monMat
               );
               mon.position.set(ox, 1.16, -0.2);
+              consoleScreenMeshes.push(mon);
               g.add(mon);
             });
             break;
           }
 
-          case "linac_vault": {
-            const stand = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.85, 0.95, 2.6, 32),
-              medicalWhiteMat
+          case "labyrinth_warning_gate": {
+            // Podświetlany kaseton ostrzegawczy nad wejściem do labiryntu
+            const signBox = new THREE.Mesh(
+              new THREE.BoxGeometry(2.1, 0.36, 0.12),
+              trimDarkMat
             );
-            stand.rotation.x = Math.PI / 2;
-            stand.position.set(0, 1.45, -1.5);
-            stand.castShadow = true;
-            g.add(stand);
+            signBox.position.set(0, 3.15, 0);
+            g.add(signBox);
 
-            const gantryGrp = new THREE.Group();
-            gantryGrp.position.set(0, 1.45, -0.3);
-            linacGantryGroup = gantryGrp;
-            g.add(gantryGrp);
-
-            const arm = new THREE.Mesh(
-              new THREE.BoxGeometry(0.85, 2.3, 0.9),
-              medicalWhiteMat
-            );
-            arm.position.set(0, 0.35, -0.4);
-            arm.castShadow = true;
-            gantryGrp.add(arm);
-
-            const head = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.42, 0.28, 0.55, 24),
-              brassMat
-            );
-            head.position.set(0, 1.15, 0.35);
-            gantryGrp.add(head);
-
-            const cone = new THREE.Mesh(
-              new THREE.ConeGeometry(0.48, 1.35, 24, 1, true),
+            const glowFace = new THREE.Mesh(
+              new THREE.PlaneGeometry(1.96, 0.24),
               new THREE.MeshBasicMaterial({
-                color: 0x38bdf8,
-                transparent: true,
-                opacity: 0.34,
+                color: 0xf59e0b,
                 side: THREE.DoubleSide
               })
             );
-            cone.position.set(0, 0.35, 0.35);
-            gantryGrp.add(cone);
+            glowFace.position.set(0, 3.15, 0.065);
+            g.add(glowFace);
+            break;
+          }
 
-            const couch = new THREE.Mesh(
-              new THREE.BoxGeometry(0.68, 0.82, 2.5),
-              couchDarkMat
+          case "linac_vault": {
+            // 1. Okrągła płyta obrotowa w podłodze pod akceleratorem (Turntable Pit Ring)
+            const floorDisc = new THREE.Mesh(
+              new THREE.CylinderGeometry(2.15, 2.15, 0.02, 48),
+              new THREE.MeshStandardMaterial({
+                color: 0x27272a,
+                roughness: 0.35,
+                metalness: 0.3
+              })
             );
-            couch.position.set(0, 0.41, 1.2);
-            couch.castShadow = true;
-            g.add(couch);
+            floorDisc.position.set(0, 0.01, 0.4);
+            floorDisc.receiveShadow = true;
+            g.add(floorDisc);
 
-            const pallet = new THREE.Mesh(
-              new THREE.BoxGeometry(0.58, 0.08, 2.1),
+            const brassRing = new THREE.Mesh(
+              new THREE.RingGeometry(2.08, 2.18, 48),
               brassMat
             );
-            pallet.position.set(0, 0.86, 0.9);
+            brassRing.rotation.x = -Math.PI / 2;
+            brassRing.position.set(0, 0.022, 0.4);
+            g.add(brassRing);
+
+            // 2. Zaokrąglony korpus bazowy akceleratora (Varian TrueBeam / Halcyon style)
+            const standBase = new THREE.Mesh(
+              new THREE.CylinderGeometry(1.12, 1.22, 2.75, 36),
+              medicalWhiteMat
+            );
+            standBase.rotation.x = Math.PI / 2;
+            standBase.position.set(0, 1.48, -1.65);
+            standBase.castShadow = true;
+            g.add(standBase);
+
+            const standAccentRing = new THREE.Mesh(
+              new THREE.TorusGeometry(1.08, 0.045, 16, 48),
+              new THREE.MeshStandardMaterial({
+                color: 0x0284c7,
+                emissive: 0x0369a1,
+                emissiveIntensity: 0.5
+              })
+            );
+            standAccentRing.position.set(0, 1.48, -0.28);
+            g.add(standAccentRing);
+
+            // 3. Obracające się ramię Gantry 360° z głowicą MLC i ramionami CBCT
+            const gantryGrp = new THREE.Group();
+            gantryGrp.position.set(0, 1.48, -0.25);
+            linacGantryGroup = gantryGrp;
+            g.add(gantryGrp);
+
+            const gantryHub = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.75, 0.75, 0.55, 32),
+              medicalWhiteMat
+            );
+            gantryHub.rotation.x = Math.PI / 2;
+            gantryGrp.add(gantryHub);
+
+            const upperArm = new THREE.Mesh(
+              new THREE.BoxGeometry(0.92, 1.45, 1.35),
+              medicalWhiteMat
+            );
+            upperArm.position.set(0, 0.85, 0.35);
+            upperArm.castShadow = true;
+            gantryGrp.add(upperArm);
+
+            const armDarkTrim = new THREE.Mesh(
+              new THREE.BoxGeometry(0.94, 0.18, 1.37),
+              couchDarkMat
+            );
+            armDarkTrim.position.set(0, 1.25, 0.35);
+            gantryGrp.add(armDarkTrim);
+
+            // Głowica terapeutyczna z kolimatorem wielolistkowym (MLC)
+            const linacHead = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.46, 0.32, 0.48, 28),
+              couchDarkMat
+            );
+            linacHead.position.set(0, 0.98, 0.95);
+            gantryGrp.add(linacHead);
+
+            const mlcWindow = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.24, 0.24, 0.5, 24),
+              brassMat
+            );
+            mlcWindow.position.set(0, 0.96, 0.95);
+            gantryGrp.add(mlcWindow);
+
+            // Boczne ramiona obrazowania kV CBCT (On-Board Imager)
+            [-0.78, 0.78].forEach((sideX) => {
+              const obiArm = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.75, 0.16),
+                chromeMat
+              );
+              obiArm.position.set(sideX, 0.0, 0.65);
+              gantryGrp.add(obiArm);
+
+              const flatPanel = new THREE.Mesh(
+                new THREE.BoxGeometry(0.06, 0.48, 0.48),
+                medicalWhiteMat
+              );
+              flatPanel.position.set(sideX, -0.35, 0.92);
+              gantryGrp.add(flatPanel);
+            });
+
+            // Stożek wiązki terapeutycznej
+            const cone = new THREE.Mesh(
+              new THREE.ConeGeometry(0.44, 1.25, 28, 1, true),
+              new THREE.MeshBasicMaterial({
+                color: 0x38bdf8,
+                transparent: true,
+                opacity: 0.28,
+                side: THREE.DoubleSide
+              })
+            );
+            cone.position.set(0, 0.32, 0.95);
+            gantryGrp.add(cone);
+
+            // 4. Stół robotyczny 6DoF (Carbon Fiber Couch + Bellows Column)
+            const couchBase = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.42, 0.5, 0.22, 24),
+              trimDarkMat
+            );
+            couchBase.position.set(0, 0.11, 1.55);
+            g.add(couchBase);
+
+            [0.32, 0.52, 0.72].forEach((by) => {
+              const bellow = new THREE.Mesh(
+                new THREE.BoxGeometry(0.56, 0.14, 0.95),
+                couchDarkMat
+              );
+              bellow.position.set(0, by, 1.55);
+              bellow.castShadow = true;
+              g.add(bellow);
+            });
+
+            // Płyta karbonowa stołu terapeutycznego
+            const carbonTop = new THREE.Mesh(
+              new THREE.BoxGeometry(0.62, 0.06, 2.55),
+              trimDarkMat
+            );
+            carbonTop.position.set(0, 0.86, 1.15);
+            carbonTop.castShadow = true;
+            g.add(carbonTop);
+
+            // Złota paleta pozycjonująca RT 1:1 + niebieski materac próżniowy
+            const pallet = new THREE.Mesh(
+              new THREE.BoxGeometry(0.56, 0.04, 2.05),
+              brassMat
+            );
+            pallet.position.set(0, 0.91, 1.05);
             g.add(pallet);
+
+            const vacCushion = new THREE.Mesh(
+              new THREE.BoxGeometry(0.5, 0.05, 1.35),
+              new THREE.MeshStandardMaterial({
+                color: 0x0284c7,
+                roughness: 0.45
+              })
+            );
+            vacCushion.position.set(0, 0.95, 1.02);
+            g.add(vacCushion);
+
+            // Pilot ręczny (Hand Pendant) zawieszony z boku stołu
+            const pendant = new THREE.Mesh(
+              new THREE.BoxGeometry(0.08, 0.24, 0.14),
+              new THREE.MeshStandardMaterial({ color: 0x38bdf8 })
+            );
+            pendant.position.set(-0.34, 0.78, 1.45);
+            g.add(pendant);
+
+            // 5. Zielone lasery pozycjonujące 3D przecinające się w izocentrum (y=1.05, z=1.05)
+            const laserMat = new THREE.MeshBasicMaterial({
+              color: 0x10b981,
+              transparent: true,
+              opacity: 0.65
+            });
+            const laserCrossX = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.005, 0.005, 5.2, 8),
+              laserMat
+            );
+            laserCrossX.rotation.z = Math.PI / 2;
+            laserCrossX.position.set(0, 1.05, 1.05);
+            g.add(laserCrossX);
+
+            const laserCrossY = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.005, 0.005, 2.8, 8),
+              laserMat
+            );
+            laserCrossY.position.set(0, 2.4, 1.05);
+            g.add(laserCrossY);
             break;
           }
 
           case "anesthesia_cart": {
-            const cart = new THREE.Mesh(
-              new THREE.BoxGeometry(0.65, 1.35, 0.65),
+            // Profesjonalne stanowisko do znieczulenia wziewnego z parownikiem izofluranu, respiratorem i kardiomonitorem
+            const cartBody = new THREE.Mesh(
+              new THREE.BoxGeometry(0.72, 1.18, 0.68),
               medicalWhiteMat
             );
-            cart.position.y = 0.675;
-            cart.castShadow = true;
-            g.add(cart);
+            cartBody.position.y = 0.65;
+            cartBody.castShadow = true;
+            g.add(cartBody);
 
-            const screen = new THREE.Mesh(
-              new THREE.BoxGeometry(0.48, 0.36, 0.06),
+            // Szuflady z uchwytami
+            [0.35, 0.65, 0.95].forEach((dy) => {
+              const drawer = new THREE.Mesh(
+                new THREE.BoxGeometry(0.64, 0.22, 0.03),
+                new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })
+              );
+              drawer.position.set(0, dy, 0.345);
+              g.add(drawer);
+
+              const handle = new THREE.Mesh(
+                new THREE.BoxGeometry(0.22, 0.025, 0.03),
+                chromeMat
+              );
+              handle.position.set(0, dy, 0.37);
+              g.add(handle);
+            });
+
+            // Parownik izofluranu + miech respiratora w przezroczystym cylindrze
+            const vaporizer = new THREE.Mesh(
+              new THREE.BoxGeometry(0.18, 0.26, 0.22),
+              new THREE.MeshStandardMaterial({ color: 0x7e22ce })
+            );
+            vaporizer.position.set(-0.18, 1.38, 0.1);
+            g.add(vaporizer);
+
+            const bellowsGlass = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.11, 0.11, 0.34, 16),
+              glassMat
+            );
+            bellowsGlass.position.set(0.16, 1.42, 0.1);
+            g.add(bellowsGlass);
+
+            const bellowsInner = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.085, 0.085, 0.22, 16),
+              new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+            );
+            bellowsInner.position.set(0.16, 1.38, 0.1);
+            g.add(bellowsInner);
+
+            // Butla tlenowa z tyłu wózka
+            const o2Cylinder = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.1, 0.1, 0.85, 16),
+              new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+            );
+            o2Cylinder.position.set(0, 0.65, -0.42);
+            g.add(o2Cylinder);
+
+            // Kardiomonitor parametrów życiowych na wysięgniku
+            const pole = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.025, 0.025, 0.55, 12),
+              chromeMat
+            );
+            pole.position.set(0, 1.5, -0.15);
+            g.add(pole);
+
+            const monCasing = new THREE.Mesh(
+              new THREE.BoxGeometry(0.56, 0.4, 0.06),
+              trimDarkMat
+            );
+            monCasing.position.set(0, 1.78, -0.12);
+            g.add(monCasing);
+
+            const monScreen = new THREE.Mesh(
+              new THREE.BoxGeometry(0.5, 0.34, 0.07),
               new THREE.MeshBasicMaterial({ color: 0x10b981 })
             );
-            screen.position.y = 1.55;
-            g.add(screen);
+            monScreen.position.set(0, 1.78, -0.11);
+            g.add(monScreen);
+            break;
+          }
+
+          case "vault_interior_architecture": {
+            // 1. Podświetlany panel sufitowy "Sky Ceiling" nad stołem akceleratora
+            const skyFrame = new THREE.Mesh(
+              new THREE.BoxGeometry(3.2, 0.06, 2.4),
+              medicalWhiteMat
+            );
+            skyFrame.position.set(0, 3.85, 0);
+            g.add(skyFrame);
+
+            const skyPanel = new THREE.Mesh(
+              new THREE.PlaneGeometry(2.95, 2.15),
+              new THREE.MeshBasicMaterial({
+                color: 0xbae6fd,
+                side: THREE.DoubleSide
+              })
+            );
+            skyPanel.rotation.x = Math.PI / 2;
+            skyPanel.position.set(0, 3.81, 0);
+            g.add(skyPanel);
+
+            // 2. Ścienne panele dozymetryczne i kamery telewizji przemysłowej HD (CCTV)
+            const dosimetryBoard = new THREE.Mesh(
+              new THREE.BoxGeometry(0.08, 1.4, 2.2),
+              medicalWhiteMat
+            );
+            dosimetryBoard.position.set(3.32, 1.65, 1.8);
+            g.add(dosimetryBoard);
+
+            const dosimetryScreen = new THREE.Mesh(
+              new THREE.BoxGeometry(0.1, 0.65, 1.1),
+              new THREE.MeshBasicMaterial({ color: 0x0284c7 })
+            );
+            dosimetryScreen.position.set(3.31, 1.75, 1.8);
+            g.add(dosimetryScreen);
+
+            // 2 Kamery HD PTZ w narożnikach bunkra skierowane na pacjenta
+            [
+              [3.1, 3.35, 3.8],
+              [-2.3, 3.35, -4.8]
+            ].forEach(([cx, cy, cz]) => {
+              const camMount = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08, 0.1, 0.18, 16),
+                medicalWhiteMat
+              );
+              camMount.position.set(cx, cy, cz);
+              g.add(camMount);
+
+              const camDome = new THREE.Mesh(
+                new THREE.SphereGeometry(0.09, 16, 16),
+                trimDarkMat
+              );
+              camDome.position.set(cx, cy - 0.1, cz);
+              g.add(camDome);
+
+              const recLed = new THREE.Mesh(
+                new THREE.SphereGeometry(0.02, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0x10b981 })
+              );
+              recLed.position.set(cx - 0.06, cy - 0.08, cz);
+              g.add(recLed);
+            });
             break;
           }
 
@@ -2495,7 +3317,6 @@
           }
 
           case "staff_marzena": {
-            // Pani Marzena (Recepcja)
             const marzena = buildHumanCharacter({
               coatColor: 0x2e443b,
               scrubColor: 0xc5a67c,
@@ -2508,7 +3329,6 @@
           }
 
           case "staff_dr_anna": {
-            // Dr Anna Jaśkiewicz (Lekarz Onkolog, blond włosy do ramion)
             const drAnna = buildHumanCharacter({
               coatColor: 0xfafaf9,
               scrubColor: 0x0284c7,
@@ -2521,7 +3341,6 @@
           }
 
           case "staff_emilia": {
-            // Anestezjolog Emilia Sulik (kręcone włosy, turkusowy strój zabiegowy, stetoskop i karta znieczulenia)
             const emilia = buildHumanCharacter({
               coatColor: 0x0d9488,
               scrubColor: 0xfafaf9,
@@ -2535,7 +3354,6 @@
           }
 
           case "staff_pawel": {
-            // Technik Paweł (Sterownia, granatowy uniform elektroradiologii, okulary)
             const pawel = buildHumanCharacter({
               coatColor: 0x1e3a8a,
               scrubColor: 0x38bdf8,
@@ -2566,7 +3384,7 @@
       buildClinicScene();
 
       // ============================================================================
-      // 6. DYNAMIC PET MODELS: WHITE POODLE WITH BROWN RUMP PATCH & PATIENT PET
+      // 7. DYNAMIC PET MODELS: WHITE POODLE WITH BROWN RUMP PATCH & PATIENT PET
       // ============================================================================
       function createWhitePoodleWithBrownPatch(scale = 1.08) {
         const root = new THREE.Group();
@@ -2625,7 +3443,6 @@
           root.add(puff);
         });
 
-        // Charakterystyczna brązowa łatka na zadzie / u nasady ogona
         const rumpPatchMain = new THREE.Mesh(
           new THREE.SphereGeometry(0.185, 16, 16),
           brownPatchMat
@@ -2941,7 +3758,6 @@
         return { root, legs, tailPivot, headGroup };
       }
 
-      // 1) Biały Pudel z brązową łatką na zadzie spacerujący po klinice
       const whitePoodle = createWhitePoodleWithBrownPatch(1.06);
       const dogPath = [
         new THREE.Vector3(-11.2, 0, -4.5),
@@ -2956,7 +3772,6 @@
       whitePoodle.root.position.copy(dogPath[0]);
       const dogState = { idx: 1 };
 
-      // 2) Pacjent użytkownika (Kot lub Pies) przenoszony na kolejne stanowiska misji
       const missionPetHolder = new THREE.Group();
       scene.add(missionPetHolder);
 
@@ -2980,7 +3795,6 @@
         scene.remove(missionPet.root);
         missionPetHolder.add(missionPet.root);
 
-        // Transporter (widoczny dla kota w 1. kroku)
         carrierShell = new THREE.Mesh(
           new THREE.BoxGeometry(0.55, 0.45, 0.72),
           new THREE.MeshStandardMaterial({
@@ -3033,7 +3847,7 @@
       }
 
       // ============================================================================
-      // 7. WAYPOINT RINGS & FLOATING POI LABELS
+      // 8. WAYPOINT RINGS & FLOATING POI LABELS
       // ============================================================================
       const waypointMeshes = [];
       const ringGeo = new THREE.RingGeometry(0.32, 0.44, 32);
@@ -3135,7 +3949,7 @@
       }
 
       // ============================================================================
-      // 8. MODE SWITCHING & MISSION FLOW
+      // 9. MODE SWITCHING & MISSION FLOW
       // ============================================================================
       function switchAppMode(mode) {
         appMode = mode;
@@ -3159,6 +3973,9 @@
         } else {
           missionBox.classList.add("hidden");
           document.getElementById("physicsSimBox").classList.add("hidden");
+          document
+            .getElementById("oncologyScenarioBox")
+            .classList.add("hidden");
           toggleDrawer(true);
           walkToWaypoint(currentWaypointIdx);
         }
@@ -3186,6 +4003,46 @@
         }
       }
 
+      function refreshCurrentMissionUI() {
+        const steps = getMissionSteps();
+        const m = steps[currentMissionStep];
+        if (!m) return;
+
+        document.getElementById("hud-room-code").textContent = m.code;
+        document.getElementById("hud-room-title").textContent = m.title;
+        document.getElementById("drawer-tag").textContent =
+          `SCENARIUSZ WIZYTY: ${patientProfile.name.toUpperCase()}`;
+        document.getElementById("mission-step-badge").textContent =
+          `ETAP ${currentMissionStep + 1} Z ${steps.length}`;
+        document.getElementById("mission-cat-status").textContent = m.status;
+        document.getElementById("mission-progress-bar").style.width =
+          `${((currentMissionStep + 1) / steps.length) * 100}%`;
+
+        document.getElementById("drawer-title").textContent = m.title;
+        document.getElementById("drawer-desc").textContent = m.desc;
+        document.getElementById("drawer-fact-title").textContent = m.factTitle;
+        document.getElementById("drawer-fact-body").textContent = m.factBody;
+        document.getElementById("drawer-img").src = m.img;
+        document.getElementById("drawer-next-btn").textContent = m.btnText;
+
+        // Show Oncology Scenario Selector in Step 2 (Dr Anna Jaśkiewicz)
+        const oncoBox = document.getElementById("oncologyScenarioBox");
+        if (currentMissionStep === 2) {
+          oncoBox.classList.remove("hidden");
+        } else {
+          oncoBox.classList.add("hidden");
+        }
+
+        // Show Treatment Planning Approval in Step 5 (Technician Paweł)
+        const simBox = document.getElementById("physicsSimBox");
+        if (currentMissionStep === 5) {
+          simBox.classList.remove("hidden");
+          resetPlanApprovalUI();
+        } else {
+          simBox.classList.add("hidden");
+        }
+      }
+
       function goToMissionStep(stepIdx) {
         const steps = getMissionSteps();
         currentMissionStep = (stepIdx + steps.length) % steps.length;
@@ -3205,36 +4062,18 @@
         missionPetHolder.position.set(m.petPos.x, m.petPos.y, m.petPos.z);
         if (carrierShell) carrierShell.visible = !!m.petPos.inCarrier;
 
-        document.getElementById("hud-room-code").textContent = m.code;
-        document.getElementById("hud-room-title").textContent = m.title;
-        document.getElementById("drawer-tag").textContent =
-          `SCENARIUSZ WIZYTY: ${patientProfile.name.toUpperCase()}`;
-        document.getElementById("mission-step-badge").textContent =
-          `ETAP ${currentMissionStep + 1} Z ${steps.length}`;
-        document.getElementById("mission-cat-status").textContent = m.status;
-        document.getElementById("mission-progress-bar").style.width =
-          `${((currentMissionStep + 1) / steps.length) * 100}%`;
-
-        document.getElementById("drawer-title").textContent = m.title;
-        document.getElementById("drawer-desc").textContent = m.desc;
-        document.getElementById("drawer-fact-title").textContent = m.factTitle;
-        document.getElementById("drawer-fact-body").textContent = m.factBody;
-        document.getElementById("drawer-img").src = m.img;
-        document.getElementById("drawer-next-btn").textContent = m.btnText;
-
-        const simBox = document.getElementById("physicsSimBox");
-        if (currentMissionStep === 5) {
-          simBox.classList.remove("hidden");
-        } else {
-          simBox.classList.add("hidden");
-        }
-
+        refreshCurrentMissionUI();
         highlightNavButton(currentWaypointIdx);
       }
 
       function handlePrimaryAction() {
         if (appMode === "mission") {
           const steps = getMissionSteps();
+          // Jeśli jesteśmy w Sterowni (krok 6, index 5) i plan nie został jeszcze zatwierdzony, najpierw zatwierdzamy plan!
+          if (currentMissionStep === 5 && !isPlanApproved) {
+            approveTreatmentPlan();
+            return;
+          }
           if (currentMissionStep === steps.length - 1) {
             switchAppMode("tour");
             walkToWaypoint(7);
@@ -3284,6 +4123,21 @@
           document.getElementById("drawer-img").src = wp.img;
           document.getElementById("drawer-next-btn").textContent =
             `Idź dalej: ${nextWp.nav} →`;
+
+          // W trybie zwiedzania pokaż też selektor chorób u dr Jaśkiewicz i zatwierdzanie planu w Sterowni
+          const oncoBox = document.getElementById("oncologyScenarioBox");
+          const simBox = document.getElementById("physicsSimBox");
+          if (index === 1) {
+            oncoBox.classList.remove("hidden");
+          } else {
+            oncoBox.classList.add("hidden");
+          }
+          if (index === 4) {
+            simBox.classList.remove("hidden");
+            resetPlanApprovalUI();
+          } else {
+            simBox.classList.add("hidden");
+          }
         }
 
         highlightNavButton(index);
@@ -3317,7 +4171,7 @@
       }
 
       // ============================================================================
-      // 9. TOUCH & MOUSE NAVIGATION (MOBILE-FIRST DRAG, TAP-TO-WALK, PINCH)
+      // 10. TOUCH & MOUSE NAVIGATION
       // ============================================================================
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
@@ -3463,7 +4317,7 @@
       }
 
       // ============================================================================
-      // 10. LIVE 2D RADAR MINIMAP
+      // 11. LIVE 2D RADAR MINIMAP
       // ============================================================================
       const radarCanvas = document.getElementById("radarCanvas");
       const rCtx = radarCanvas ? radarCanvas.getContext("2d") : null;
@@ -3570,7 +4424,7 @@
       }
 
       // ============================================================================
-      // 11. MAIN ANIMATION LOOP
+      // 12. MAIN ANIMATION LOOP
       // ============================================================================
       const clock = new THREE.Clock();
 
@@ -3660,7 +4514,7 @@
         document.getElementById("droneModal").classList.add("hidden");
       }
 
-      // Initialize default mission step behind the welcome modal
+      renderOncologySelectors();
       goToMissionStep(0);
       animate();
     </script>
