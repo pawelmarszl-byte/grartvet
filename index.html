@@ -155,9 +155,9 @@
         >
           Wpisz imię swojego zwierzaka i wybierz gatunek. Przejdziemy wspólnie
           przez 7 etapów wizyty — od powitania u Pani Marzeny, przez wybór
-          scenariusza choroby z onkolog dr Anną Jaśkiewicz, sedację u
-          anestezjolog Emilii Sulik, zatwierdzenie planu wiązki 3D u technika
-          Pawła, aż po zabieg w bunkrze akceleratora.
+          scenariusza choroby i analizę przekroju TK z onkolog dr Anną
+          Jaśkiewicz, sedację u anestezjolog Emilii Sulik, zatwierdzenie planu
+          wiązki 3D u technika Pawła, aż po zabieg w bunkrze akceleratora.
         </p>
 
         <div class="mt-6 space-y-5">
@@ -238,13 +238,13 @@
       </div>
     </div>
 
-    <!-- ================= ONCOLOGY SCENARIOS MODAL (1:1 WEBSITE STYLE) ================= -->
+    <!-- ================= ONCOLOGY SCENARIOS MODAL (1:1 WEBSITE STYLE + INTERACTIVE CT SKULL PLAN) ================= -->
     <div
       id="diseaseModal"
       class="hidden fixed inset-0 z-50 bg-obsidian/90 backdrop-blur-lg flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
     >
       <div
-        class="max-w-5xl w-full bg-[#F7F5F0] text-[#141413] border border-black/15 shadow-2xl overflow-hidden my-auto"
+        class="max-w-6xl w-full bg-[#F7F5F0] text-[#141413] border border-black/15 shadow-2xl overflow-hidden my-auto"
       >
         <!-- Modal Top Bar -->
         <div
@@ -254,8 +254,8 @@
             <span class="w-2 h-2 rounded-full bg-emerald"></span>
             <span
               class="font-mono text-[11px] uppercase tracking-widest text-brass"
-              >KONSULTACJA ONKOLOGICZNA — DR ANNA JAŚKIEWICZ (SCENARIUSZE
-              LECZENIA)</span
+              >KONSULTACJA ONKOLOGICZNA — DR ANNA JAŚKIEWICZ (SCENARIUSZE I
+              PRZEKRÓJ TK)</span
             >
           </div>
           <button
@@ -267,7 +267,7 @@
         </div>
 
         <!-- 2-Column Website Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
+        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[500px]">
           <!-- Left Column: Species & 5 Diagnoses -->
           <div
             class="lg:col-span-5 bg-[#EFECE6] p-5 sm:p-7 border-b lg:border-b-0 lg:border-r border-black/10 flex flex-col justify-between"
@@ -310,15 +310,16 @@
             <div
               class="mt-6 pt-4 border-t border-black/10 text-[11px] text-black/60"
             >
-              Wybrany scenariusz zostanie przypisany do karty pacjenta
+              Wybrany scenariusz oraz przekrój TK z planem izodoz zostaną
+              przypisane do karty pacjenta
               <strong id="modalPetNameLabel" class="text-black">Mruczek</strong>
-              w symulacji planowania wiązki 3D u technika Pawła.
+              w symulacji u technika Pawła.
             </div>
           </div>
 
-          <!-- Right Column: Selected Scenario Clinical Details -->
+          <!-- Right Column: Selected Scenario Clinical Details + CT Skull Plan Preview -->
           <div
-            class="lg:col-span-7 p-6 sm:p-10 bg-white flex flex-col justify-between"
+            class="lg:col-span-7 p-6 sm:p-8 bg-white flex flex-col justify-between"
           >
             <div>
               <div
@@ -342,24 +343,98 @@
 
               <h2
                 id="modalRightTitle"
-                class="font-serif text-3xl sm:text-4xl text-[#141413] mt-6 leading-tight"
+                class="font-serif text-3xl sm:text-4xl text-[#141413] mt-4 leading-tight"
               >
                 Guz z komórek tucznych (Mastocytoma / MCT)
               </h2>
 
               <p
                 id="modalRightDesc"
-                class="text-sm sm:text-base text-black/65 mt-4 leading-relaxed font-light"
+                class="text-sm text-black/65 mt-3 leading-relaxed font-light"
               >
                 Leczenie pooperacyjne (gdy chirurg nie mógł wyciąć guza z
                 szerokim marginesem) lub naświetlanie guza nieoperacyjnego.
               </p>
 
-              <!-- 2 Info Boxes -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-                <div class="bg-[#F9F8F5] border border-black/10 p-5">
+              <!-- Interactive CT Skull & Anatomy Cross-Section with Plan -->
+              <div
+                class="mt-5 bg-[#0E0E0D] text-alabaster p-3.5 border border-black/20 shadow-inner"
+              >
+                <div
+                  class="flex flex-wrap items-center justify-between gap-2 mb-2 border-b border-white/10 pb-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="w-2 h-2 rounded-full bg-clinical animate-pulse"
+                    ></span>
+                    <span
+                      class="font-mono text-[10px] uppercase tracking-widest text-brass"
+                      id="modalCtHeader"
+                      >PRZEKRÓJ TK CZASZKI I PLAN IZODOZ 3D (SYMULACJA
+                      TPS)</span
+                    >
+                  </div>
+                  <div class="flex items-center gap-3 text-[10px] font-mono">
+                    <span class="flex items-center gap-1 text-red-400"
+                      ><span
+                        class="w-2 h-2 rounded-full bg-red-500 inline-block"
+                      ></span>
+                      Guz (PTV)</span
+                    >
+                    <span class="flex items-center gap-1 text-emerald"
+                      ><span
+                        class="w-2 h-2 rounded-full bg-emerald inline-block"
+                      ></span>
+                      Izodoza 95%</span
+                    >
+                    <span class="flex items-center gap-1 text-clinical"
+                      ><span
+                        class="w-2 h-2 rounded-full bg-clinical inline-block"
+                      ></span>
+                      OAR (Oczy/Mózg)</span
+                    >
+                  </div>
+                </div>
+                <div
+                  class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center"
+                >
                   <div
-                    class="font-mono text-[10px] uppercase tracking-[0.16em] text-black/50 mb-2"
+                    class="sm:col-span-7 flex justify-center bg-[#09090B] border border-white/10 p-1"
+                  >
+                    <canvas
+                      id="modalCtCanvas"
+                      width="320"
+                      height="190"
+                      class="w-full max-w-[320px] h-auto"
+                    ></canvas>
+                  </div>
+                  <div
+                    class="sm:col-span-5 text-[11px] text-alabaster/80 space-y-2 font-light"
+                  >
+                    <div
+                      class="font-mono text-[10px] uppercase text-brass tracking-wider"
+                    >
+                      OCHRONA NARZĄDÓW (MLC):
+                    </div>
+                    <p id="modalCtNote" class="leading-relaxed">
+                      Wiązki z głowicy 360° skupiają dawkę terapeutyczną w
+                      obrębie guza (PTV), omijając soczewki oczu i zdrowe
+                      struktury czaszki.
+                    </p>
+                    <div
+                      class="p-2 bg-white/5 border-l-2 border-emerald font-mono text-[10px] text-emerald"
+                    >
+                      Dawka w soczewkę oka: &lt; 2% (Pełna ochrona wzroku)
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2 Info Boxes -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+                <div class="bg-[#F9F8F5] border border-black/10 p-4">
+                  <div
+                    class="font-mono text-[10px] uppercase tracking-[0.16em] text-black/50 mb-1.5"
                   >
                     TYPOWY SCHEMAT WIZYT
                   </div>
@@ -371,22 +446,22 @@
                   </div>
                 </div>
 
-                <div class="bg-[#F9F8F5] border border-black/10 p-5">
+                <div class="bg-[#F9F8F5] border border-black/10 p-4">
                   <div
-                    class="font-mono text-[10px] uppercase tracking-[0.16em] text-black/50 mb-2"
+                    class="font-mono text-[10px] uppercase tracking-[0.16em] text-black/50 mb-1.5"
                   >
                     BADANIA DO KWALIFIKACJI
                   </div>
                   <ul
                     id="modalRightTests"
-                    class="text-xs sm:text-sm text-black/80 space-y-1.5"
+                    class="text-xs text-black/80 space-y-1"
                   ></ul>
                 </div>
               </div>
             </div>
 
             <div
-              class="mt-8 pt-5 border-t border-black/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
+              class="mt-6 pt-4 border-t border-black/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
             >
               <div class="text-xs text-black/60">
                 Narządy chronione w planowaniu 3D:
@@ -575,7 +650,7 @@
     <!-- ================= RIGHT / BOTTOM DRAWER: MISSION & ROOM INSPECTION CARD ================= -->
     <aside
       id="infoDrawer"
-      class="fixed bottom-0 left-0 right-0 md:left-auto md:top-28 md:right-6 md:bottom-6 md:w-[410px] max-h-[64vh] md:max-h-none z-30 bg-obsidian/95 backdrop-blur-xl border-t md:border border-white/20 p-4 sm:p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 translate-y-0 md:translate-x-0"
+      class="fixed bottom-0 left-0 right-0 md:left-auto md:top-28 md:right-6 md:bottom-6 md:w-[420px] max-h-[66vh] md:max-h-none z-30 bg-obsidian/95 backdrop-blur-xl border-t md:border border-white/20 p-4 sm:p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 translate-y-0 md:translate-x-0"
     >
       <div class="space-y-3 sm:space-y-3.5 overflow-y-auto pr-1">
         <div
@@ -646,6 +721,36 @@
           Opis pomieszczenia...
         </p>
 
+        <!-- ================= SHARED INTERACTIVE CT SKULL CROSS-SECTION VIEWER (VISIBLE IN CONSULTATION, CT & CONTROL ROOM) ================= -->
+        <div
+          id="drawerCtPlanBox"
+          class="hidden p-3 bg-[#09090B] border border-brass/50 space-y-2"
+        >
+          <div class="flex items-center justify-between">
+            <span
+              class="font-mono text-[9px] uppercase tracking-widest text-brass"
+              id="drawerCtTitle"
+              >PRZEKRÓJ TK CZASZKI — PLAN WIĄZKI 3D</span
+            >
+            <span class="font-mono text-[9px] text-emerald" id="drawerCtSub"
+              >IZODOZA 95% / OAR OK</span
+            >
+          </div>
+          <canvas
+            id="drawerCtCanvas"
+            width="330"
+            height="172"
+            class="w-full h-auto border border-white/10 bg-black"
+          ></canvas>
+          <div
+            class="flex items-center justify-between text-[9px] font-mono text-alabaster/70"
+          >
+            <span class="text-red-400">● Guz (PTV)</span>
+            <span class="text-emerald">― Izodoza 95%</span>
+            <span class="text-clinical">○ Oczy / Mózg (OAR)</span>
+          </div>
+        </div>
+
         <!-- ================= ONCOLOGIST DISEASE SCENARIO SELECTOR (VISIBLE IN CONSULTATION) ================= -->
         <div
           id="oncologyScenarioBox"
@@ -661,7 +766,7 @@
               onclick="openDiseaseModal()"
               class="text-[10px] font-mono uppercase px-2 py-0.5 bg-brass text-obsidian font-semibold hover:bg-alabaster transition"
             >
-              Pełna karta ↗
+              Pełna karta + TK ↗
             </button>
           </div>
 
@@ -725,7 +830,9 @@
               <span class="text-alabaster/75"
                 >1. Pokrycie guza dawką (PTV):</span
               >
-              <span id="ptvValLabel" class="text-emerald font-bold">98%</span>
+              <span id="ptvValLabel" class="text-emerald font-bold"
+                >98% dawki w guz</span
+              >
             </div>
             <input
               id="ptvSlider"
@@ -745,7 +852,7 @@
                 >2. Ochrona narządów (MLC OAR):</span
               >
               <span id="oarValLabel" class="text-clinical font-bold"
-                >99% ochrony</span
+                >99% ochrony OAR</span
               >
             </div>
             <input
@@ -859,7 +966,7 @@
     <!-- ================= 3D ENGINE & CLINICAL MISSION LOGIC ================= -->
     <script>
       // ============================================================================
-      // 1. PERSONALIZED PATIENT STATE & 5 ONCOLOGY SCENARIOS (FROM WEBSITE)
+      // 1. PERSONALIZED PATIENT STATE & 5 ONCOLOGY SCENARIOS (WITH CT SKULL PLAN DATA)
       // ============================================================================
       let appMode = "mission"; // 'mission' | 'tour'
       let cameraViewMode = "fpp"; // 'fpp' | 'orbit'
@@ -888,7 +995,17 @@
             "USG jamy brzusznej",
             "Podstawowe badania krwi i echo serca"
           ],
-          oar: "Zdrowa skóra właściwa, węzły chłonne i głębokie tkanki miękkie"
+          oar: "Zdrowa skóra właściwa, kości jarzmowe i gałka oczna",
+          ctConfig: {
+            header:
+              "PRZEKRÓJ TK GŁOWY — MASTOCYTOMA (MCT) OKOLICY SKRONIOWO-JARZMOWEJ",
+            note: "Wiązka styczna obejmuje lożę pooperacyjną MCT na powierzchni czaszki, całkowicie omijając soczewkę lewego oka oraz mózgowie.",
+            tumorX: -48,
+            tumorY: -12,
+            tumorRx: 20,
+            tumorRy: 13,
+            beamAngles: [-145, -95, -45]
+          }
         },
         {
           id: "sts",
@@ -903,7 +1020,17 @@
             "Wynik badania histopatologicznego",
             "RTG klatki piersiowej oraz badania krwi"
           ],
-          oar: "Rdzeń kręgowy, płuca oraz sąsiadujące struktury kostne"
+          oar: "Rdzeń kręgowy, kręgi szyjno-piersiowe oraz tkanki głębokie",
+          ctConfig: {
+            header:
+              "PRZEKRÓJ TK — MIĘSAK TKANEK MIĘKKICH / FISS Z OCHRONĄ RDZENIA",
+            note: "Kolimator MLC kształtuje pole z marginesem bezpieczeństwa wokół nacieku mięsaka, odcinając dawkę przed kanałem kręgowym i strukturami nerwowymi.",
+            tumorX: 38,
+            tumorY: 26,
+            tumorRx: 26,
+            tumorRy: 16,
+            beamAngles: [35, 85, 135]
+          }
         },
         {
           id: "brain",
@@ -918,7 +1045,17 @@
             "Konsultacja neurologiczna",
             "Podstawowe badania krwi i echo serca"
           ],
-          oar: "Skrzyżowanie nerwów wzrokowych, pień mózgu i soczewki oczu"
+          oar: "Skrzyżowanie nerwów wzrokowych, pień mózgu i soczewki oczu",
+          ctConfig: {
+            header:
+              "PRZEKRÓJ TK CZASZKI — OPONIAK WEWNĄTRZCZASZKOWY / GUZ PRZYSADKI",
+            note: "Technika konformalna 360° skupia izodozę 95% wewnątrz jamy czaszki dokładnie w obrębie oponiaka, chroniąc zdrowe półkule mózgu i nerwy wzrokowe.",
+            tumorX: 16,
+            tumorY: 18,
+            tumorRx: 19,
+            tumorRy: 17,
+            beamAngles: [-120, -40, 40, 120]
+          }
         },
         {
           id: "nasal",
@@ -933,7 +1070,17 @@
             "Wynik histopatologii / biopsji z jamy nosowej lub ustnej",
             "Badania krwi, echo serca i ocena węzłów chłonnych"
           ],
-          oar: "Gałki oczne, soczewki (0% dawki w soczewkę) oraz mózgowie"
+          oar: "Gałki oczne, soczewki (0% dawki w soczewkę) oraz mózgowie",
+          ctConfig: {
+            header:
+              "PRZEKRÓJ TK CZASZKI — GUZ JAMY NOSOWEJ I ZATOK (OCHRONA OCZU)",
+            note: "Klasyczny plan TK czaszki: guz w jamie nosowej pomiędzy oczodołami otrzymuje pełną dawkę (czerwone PTV), podczas gdy listki MLC chronią obie soczewki oczu.",
+            tumorX: -6,
+            tumorY: -28,
+            tumorRx: 18,
+            tumorRy: 24,
+            beamAngles: [-155, -110, -70, -25]
+          }
         },
         {
           id: "osa",
@@ -948,9 +1095,286 @@
             "Badania krwi (profil nerkowy i wątrobowy)",
             "Konsultacja onkologiczno-ortopedyczna"
           ],
-          oar: "Zdrowy szpik kostny, sąsiednie stawy i pęczki nerwowe"
+          oar: "Zdrowy szpik kostny, sąsiednie stawy i pęczki nerwowe",
+          ctConfig: {
+            header:
+              "PRZEKRÓJ TK — OGNISKO OSTEOLIZY KOŚCI (KOSTNIAKOMIĘSAK OSA)",
+            note: "Wiązka celowana w przebudowaną nowotworowo warstwę korową kości hamuje ból receptorowy i pozwala zachować sprawność ruchową pacjenta.",
+            tumorX: -36,
+            tumorY: 8,
+            tumorRx: 21,
+            tumorRy: 18,
+            beamAngles: [-160, -100, -35]
+          }
         }
       ];
+
+      // ============================================================================
+      // 2. INTERACTIVE CT SKULL CROSS-SECTION & TREATMENT PLAN RENDERER (2D + 3D)
+      // ============================================================================
+      let ctMonitorTexture = null;
+      let ctMonitorCanvas = null;
+
+      function drawCtSkullPlanOnCanvas(
+        canvas,
+        scenarioIdx,
+        ptvPct = 98,
+        oarPct = 99
+      ) {
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w * 0.5;
+        const cy = h * 0.54;
+
+        const sc = ONCOLOGY_SCENARIOS[scenarioIdx] || ONCOLOGY_SCENARIOS[0];
+        const cfg = sc.ctConfig;
+
+        // 1. Tło tomografu komputerowego (skala Hounsfielda + siatka pomiarowa)
+        ctx.fillStyle = "#07090D";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.08)";
+        ctx.lineWidth = 1;
+        for (let gx = 0; gx < w; gx += 20) {
+          ctx.beginPath();
+          ctx.moveTo(gx, 0);
+          ctx.lineTo(gx, h);
+          ctx.stroke();
+        }
+        for (let gy = 0; gy < h; gy += 20) {
+          ctx.beginPath();
+          ctx.moveTo(0, gy);
+          ctx.lineTo(w, gy);
+          ctx.stroke();
+        }
+
+        // 2. Wiązki promieniowania z akceleratora (stożki MLC z kilku kątów)
+        const tx = cx + cfg.tumorX;
+        const ty = cy + cfg.tumorY;
+        cfg.beamAngles.forEach((deg) => {
+          const rad = (deg * Math.PI) / 180;
+          const bx = tx + Math.cos(rad) * 180;
+          const by = ty + Math.sin(rad) * 180;
+          const perpX = -Math.sin(rad) * (cfg.tumorRx + 6);
+          const perpY = Math.cos(rad) * (cfg.tumorRy + 6);
+
+          const beamGrad = ctx.createLinearGradient(bx, by, tx, ty);
+          beamGrad.addColorStop(0, "rgba(56, 189, 248, 0.03)");
+          beamGrad.addColorStop(0.7, "rgba(56, 189, 248, 0.16)");
+          beamGrad.addColorStop(1, "rgba(52, 211, 153, 0.25)");
+
+          ctx.fillStyle = beamGrad;
+          ctx.beginPath();
+          ctx.moveTo(bx + perpX * 1.15, by + perpY * 1.15);
+          ctx.lineTo(bx - perpX * 1.15, by - perpY * 1.15);
+          ctx.lineTo(tx - perpX, ty - perpY);
+          ctx.lineTo(tx + perpX, ty + perpY);
+          ctx.closePath();
+          ctx.fill();
+
+          // Centralna oś wiązki (przerywana linia izocentrum)
+          ctx.save();
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.45)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(bx, by);
+          ctx.lineTo(tx, ty);
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        // 3. Anatomiczny przekrój TK czaszki zwierzęcia (tkanki miękkie, kości czaszki, oczodoły, zatoki, mózgowie)
+        // Zewnętrzny obrys tkanek miękkich głowy
+        ctx.fillStyle = "#1E242D";
+        ctx.strokeStyle = "#3B4454";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 6, 68, 56, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Przednia część trzewioczaszki / nosa
+        ctx.fillStyle = "#232A34";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 26, 36, 34, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Kości czaszki w skali Hounsfielda (jasna biel korowa kości)
+        ctx.strokeStyle = "#E2E8F0";
+        ctx.lineWidth = 4.5;
+        ctx.fillStyle = "#2D3542";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 16, 48, 38, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Łuki jarzmowe (lewy i prawy)
+        ctx.strokeStyle = "#CBD5E1";
+        ctx.lineWidth = 3.5;
+        [-1, 1].forEach((dir) => {
+          ctx.beginPath();
+          ctx.arc(
+            cx + dir * 42,
+            cy - 8,
+            22,
+            dir > 0 ? -0.9 : 2.2,
+            dir > 0 ? 1.1 : 4.0
+          );
+          ctx.stroke();
+        });
+
+        // Jama nosowa i przegroda nosowa (ciemne powietrze + jasna przegroda kostna)
+        ctx.fillStyle = "#0B0E14";
+        ctx.strokeStyle = "#CBD5E1";
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 28, 20, 24, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Przegroda nosowa i małżowiny
+        ctx.strokeStyle = "#94A3B8";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 50);
+        ctx.lineTo(cx, cy - 5);
+        ctx.stroke();
+
+        // Mózgowie i pień mózgu (OAR - kontur chroniony)
+        ctx.fillStyle = "#333D4B";
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.75)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 18, 36, 28, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Gałki oczne i soczewki (OAR - kluczowe narządy krytyczne chronione przed dawką)
+        const eyeCoords = [
+          { x: cx - 34, y: cy - 24, label: "Oko L" },
+          { x: cx + 34, y: cy - 24, label: "Oko P" }
+        ];
+        eyeCoords.forEach((eye) => {
+          // Gałka oczna
+          ctx.fillStyle = "#111827";
+          ctx.strokeStyle = "#38BDF8";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(eye.x, eye.y, 12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Soczewka oka (bardzo wrażliwa OAR)
+          ctx.fillStyle = "rgba(56, 189, 248, 0.45)";
+          ctx.beginPath();
+          ctx.ellipse(eye.x, eye.y - 4, 6, 3.2, 0, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 4. Guz nowotworowy (PTV) + Linie izodozowe (50%, 95%, 100%) reagujące na suwaki
+        const scaleIso = 0.75 + (ptvPct - 85) * 0.018;
+        const oarTightness = 1 - (oarPct - 80) * 0.012;
+
+        // Izodoza 50% (błękitno-zielona poświata niskiej dawki)
+        ctx.fillStyle = "rgba(56, 189, 248, 0.16)";
+        ctx.strokeStyle = "#38BDF8";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(
+          tx,
+          ty,
+          cfg.tumorRx * 1.55 * oarTightness,
+          cfg.tumorRy * 1.55 * oarTightness,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+        ctx.stroke();
+
+        // Izodoza 95% (zielona linia terapeutyczna obejmująca PTV)
+        ctx.fillStyle = "rgba(52, 211, 153, 0.24)";
+        ctx.strokeStyle = isPlanApproved ? "#10B981" : "#34D399";
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.ellipse(
+          tx,
+          ty,
+          cfg.tumorRx * 1.22 * scaleIso,
+          cfg.tumorRy * 1.22 * scaleIso,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+        ctx.stroke();
+
+        // Guz (GTV / PTV) - czerwony kontur onkologiczny
+        ctx.fillStyle = "rgba(239, 68, 68, 0.58)";
+        ctx.strokeStyle = "#EF4444";
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.ellipse(tx, ty, cfg.tumorRx, cfg.tumorRy, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Celownik laserowy izocentrum w środku guza
+        ctx.strokeStyle = "#FBBF24";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(tx - 9, ty);
+        ctx.lineTo(tx + 9, ty);
+        ctx.moveTo(tx, ty - 9);
+        ctx.lineTo(tx, ty + 9);
+        ctx.stroke();
+
+        // 5. Etykiety diagnostyczne na skanie TK
+        ctx.font = "600 9px 'JetBrains Mono', monospace";
+        ctx.fillStyle = "#C5A67C";
+        ctx.fillText(
+          `TK 3D • ${sc.code} ${patientProfile.name.toUpperCase()}`,
+          8,
+          14
+        );
+
+        ctx.fillStyle = isPlanApproved ? "#34D399" : "#FBBF24";
+        ctx.fillText(
+          isPlanApproved
+            ? "PLAN: ZATWIERDZONY ✓"
+            : `PTV: ${ptvPct}% | OAR: ${oarPct}%`,
+          8,
+          h - 8
+        );
+      }
+
+      function refreshAllCtPlanCanvases() {
+        const ptvSlider = document.getElementById("ptvSlider");
+        const oarSlider = document.getElementById("oarSlider");
+        const ptv = ptvSlider ? parseInt(ptvSlider.value, 10) : 98;
+        const oar = oarSlider ? parseInt(oarSlider.value, 10) : 99;
+        const idx = patientProfile.selectedDiseaseIdx;
+
+        drawCtSkullPlanOnCanvas(
+          document.getElementById("modalCtCanvas"),
+          idx,
+          ptv,
+          oar
+        );
+        drawCtSkullPlanOnCanvas(
+          document.getElementById("drawerCtCanvas"),
+          idx,
+          ptv,
+          oar
+        );
+
+        if (ctMonitorCanvas && ctMonitorTexture) {
+          drawCtSkullPlanOnCanvas(ctMonitorCanvas, idx, ptv, oar);
+          ctMonitorTexture.needsUpdate = true;
+        }
+      }
 
       function selectPetSpecies(species) {
         patientProfile.species = species;
@@ -1027,6 +1451,7 @@
       function openDiseaseModal() {
         renderOncologySelectors();
         document.getElementById("diseaseModal").classList.remove("hidden");
+        refreshAllCtPlanCanvases();
       }
 
       function closeDiseaseModal() {
@@ -1040,7 +1465,6 @@
         const active = ONCOLOGY_SCENARIOS[patientProfile.selectedDiseaseIdx];
         const isCat = patientProfile.species === "cat";
 
-        // 1. Drawer quick buttons
         const drawerList = document.getElementById("drawerDiseaseButtons");
         if (drawerList) {
           drawerList.innerHTML = ONCOLOGY_SCENARIOS.map((sc, i) => {
@@ -1071,7 +1495,6 @@
           dTests.innerHTML = active.tests.map((t) => `• ${t}`).join("<br/>");
         }
 
-        // 2. Full Website Modal
         const modalDogBtn = document.getElementById("modalSpecBtn-dog");
         const modalCatBtn = document.getElementById("modalSpecBtn-cat");
         if (modalDogBtn && modalCatBtn) {
@@ -1112,6 +1535,9 @@
         const mSched = document.getElementById("modalRightSchedule");
         const mTests = document.getElementById("modalRightTests");
         const mOar = document.getElementById("modalRightOAR");
+        const mCtHeader = document.getElementById("modalCtHeader");
+        const mCtNote = document.getElementById("modalCtNote");
+        const dCtTitle = document.getElementById("drawerCtTitle");
 
         if (mPetName) mPetName.textContent = patientProfile.name;
         if (mSpecies) mSpecies.textContent = isCat ? "KOT" : "PIES";
@@ -1128,16 +1554,20 @@
             .join("");
         }
         if (mOar) mOar.textContent = active.oar;
+        if (mCtHeader) mCtHeader.textContent = active.ctConfig.header;
+        if (mCtNote) mCtNote.textContent = active.ctConfig.note;
+        if (dCtTitle) dCtTitle.textContent = active.ctConfig.header;
 
-        // 3. Update TPS labels in Step 6
         const tpsDiag = document.getElementById("tpsDiagnosisLabel");
         const tpsOar = document.getElementById("tpsOarTarget");
         if (tpsDiag) tpsDiag.textContent = active.shortNav;
         if (tpsOar) tpsOar.textContent = `Chronione OAR: ${active.oar}`;
+
+        refreshAllCtPlanCanvases();
       }
 
       // ============================================================================
-      // 2. TREATMENT PLANNING APPROVAL LOGIC (STEP 6 - TECHNICIAN PAWEŁ)
+      // 3. TREATMENT PLANNING APPROVAL LOGIC (STEP 6 - TECHNICIAN PAWEŁ)
       // ============================================================================
       let consoleScreenMeshes = [];
 
@@ -1148,6 +1578,9 @@
           `${ptv}% dawki w guz`;
         document.getElementById("oarValLabel").textContent =
           `${oar}% ochrony OAR`;
+        const sub = document.getElementById("drawerCtSub");
+        if (sub) sub.textContent = `PTV ${ptv}% / OAR ${oar}%`;
+        refreshAllCtPlanCanvases();
       }
 
       function approveTreatmentPlan() {
@@ -1168,10 +1601,13 @@
             "w-full py-2.5 px-3 bg-emerald/25 border border-emerald text-emerald font-mono text-xs uppercase tracking-wider font-bold cursor-default";
         }
 
-        // Update 3D monitors in Control Room to bright approved emerald
         consoleScreenMeshes.forEach((mesh) => {
-          mesh.material.color.setHex(0x10b981);
+          if (mesh.material && mesh.material.color && !mesh.material.map) {
+            mesh.material.color.setHex(0x10b981);
+          }
         });
+
+        refreshAllCtPlanCanvases();
 
         document.getElementById("mission-cat-status").textContent =
           `Plan 3D zatwierdzony (${activeDisease.code}) ✓`;
@@ -1202,7 +1638,7 @@
       }
 
       // ============================================================================
-      // 3. DYNAMIC MISSION STEPS & 8 TOUR WAYPOINTS
+      // 4. DYNAMIC MISSION STEPS & 8 TOUR WAYPOINTS
       // ============================================================================
       function getMissionSteps() {
         const n = patientProfile.name;
@@ -1245,13 +1681,13 @@
           {
             step: 2,
             waypointIdx: 1,
-            pos: { x: -11.8, z: 4.5 },
-            lookAt: { x: -14.2, z: 6.5 },
+            pos: { x: -12.6, z: 5.2 },
+            lookAt: { x: -14.2, z: 7.4 },
             petPos: { x: -14.2, y: 0.9, z: 6.2, inCarrier: false },
             code: "MISJA PACJENTA • KROK 3 Z 7",
             status: `Rozpoznanie: ${disease.title}`,
-            title: `3. Konsultacja i wybór scenariusza — dr Anna Jaśkiewicz`,
-            desc: `${n} znajduje się na stole diagnostycznym. Lekarz onkolog dr Anna Jaśkiewicz bada pacjenta i omawia z Tobą rozpoznanie: ${disease.title}. Wybierz poniżej jeden z 5 scenariuszy klinicznych lub otwórz pełną kartę kwalifikacji.`,
+            title: `3. Konsultacja i przekrój TK — dr Anna Jaśkiewicz`,
+            desc: `${n} znajduje się na stole diagnostycznym. Lekarz onkolog dr Anna Jaśkiewicz bada pacjenta i omawia z Tobą na przekroju TK rozpoznanie: ${disease.title}. Wybierz poniżej jeden z 5 scenariuszy klinicznych lub otwórz pełną kartę kwalifikacji.`,
             factTitle: `KWALIFIKACJA: ${disease.title.toUpperCase()}`,
             factBody: `${disease.desc} Typowy schemat: ${disease.schedule}.`,
             btnText: `Przejdź do anestezjolog Emilii Sulik (O₂) →`,
@@ -1279,9 +1715,9 @@
             lookAt: { x: 4.2, z: -8.5 },
             petPos: { x: 4.2, y: 0.85, z: -7.7, inCarrier: false },
             code: "MISJA PACJENTA • KROK 5 Z 7",
-            status: "Skanowanie 3D na palecie RT",
+            status: "Skanowanie 3D czaszki i anatomii na palecie RT",
             title: `5. Tomografia Komputerowa 3D i Materac Próżniowy`,
-            desc: `Układamy śpiącego pacjenta (${n}) na złotej palecie RT i indywidualnym materacu próżniowym, który zapamiętuje kształt ciała. Lasery wyznaczają izocentrum dla zmiany: ${disease.title}.`,
+            desc: `Układamy śpiącego pacjenta (${n}) na złotej palecie RT i indywidualnym materacu próżniowym, który zapamiętuje kształt ciała. Lasery wyznaczają izocentrum na przekroju TK dla zmiany: ${disease.title}.`,
             factTitle: "SYSTEM POZYCJONOWANIA 1:1",
             factBody: `Identyczna paleta RT znajduje się na stole akceleratora — dzięki temu podczas każdego z zaplanowanych zabiegów (${disease.schedule}) ${n} leży z dokładnością poniżej 1 mm.`,
             btnText: `Przejdź do zatwierdzenia planu u Pawła →`,
@@ -1297,10 +1733,10 @@
             status: isPlanApproved
               ? `Plan 3D zatwierdzony (${disease.code}) ✓`
               : "Oczekuje na zatwierdzenie planu 3D",
-            title: `6. Sterownia — Zatwierdzanie Planowania 3D (Technik Paweł)`,
-            desc: `Technik elektroradiologii Paweł wraz z fizykiem medycznym i dr Anną Jaśkiewicz przygotowali plan wiązki 3D dla rozpoznania: ${disease.title}. Sprawdź ochronę narządów krytycznych (${disease.oar}) i zatwierdź plan leczenia.`,
+            title: `6. Sterownia — Zatwierdzanie Planu na Przekroju TK (Technik Paweł)`,
+            desc: `Technik elektroradiologii Paweł wraz z fizykiem medycznym i dr Anną Jaśkiewicz wyznaczyli na przekroju TK wiązki i izodozy dla rozpoznania: ${disease.title}. Dostosuj suwaki PTV/OAR i zatwierdź plan leczenia.`,
             factTitle: "OBOWIĄZKOWA WERYFIKACJA I AKCEPTACJA PLANU",
-            factBody: `Dopiero po zatwierdzeniu planu 3D przez fizyka medycznego i lekarza onkologa parametry kolimatora wielolistkowego (MLC) są przesyłane do akceleratora w bunkrze.`,
+            factBody: `Dopiero po zatwierdzeniu planu 3D na przekroju TK parametry kolimatora wielolistkowego (MLC) są przesyłane do akceleratora w bunkrze.`,
             btnText: isPlanApproved
               ? `Plan zatwierdzony! Wejdź do Bunkra →`
               : `Zatwierdź plan 3D i wejdź do Bunkra →`,
@@ -1340,15 +1776,15 @@
         },
         {
           id: 1,
-          pos: { x: -12, z: 3.8 },
-          lookAt: { x: -14.2, z: 7.2 },
+          pos: { x: -12.6, z: 5.2 },
+          lookAt: { x: -14.2, z: 7.4 },
           nav: "02. Dr Jaśkiewicz",
           code: "STREFA 02 / 08 — KONSULTACJA ONKOLOGICZNA",
           title: "Gabinet Lekarza Onkologa — dr Anna Jaśkiewicz",
-          desc: "W tym gabinecie spotka się z Państwem i Waszym pupilem dr Anna Jaśkiewicz, specjalizująca się w onkologii weterynaryjnej. Przy biurku i negatoskopach omawiamy 5 scenariuszy leczenia.",
+          desc: "W tym gabinecie spotka się z Państwem i Waszym pupilem dr Anna Jaśkiewicz, specjalizująca się w onkologii weterynaryjnej. Przy biurku i negatoskopach omawiamy 5 scenariuszy leczenia oraz przekrój TK.",
           factTitle: "KONSYLIUM I KWALIFIKACJA",
           factBody:
-            "Możesz przejrzeć wszystkie 5 rozpoznań onkologicznych (Mastocytoma, Mięsaki STS/FISS, Guzy mózgu, Guzy jamy nosowej oraz Kostniakomięsak OSA).",
+            "Możesz przejrzeć wszystkie 5 rozpoznań onkologicznych (Mastocytoma, Mięsaki STS/FISS, Guzy mózgu, Guzy jamy nosowej oraz Kostniakomięsak OSA) wraz z symulacją przekroju TK.",
           img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80"
         },
         {
@@ -1371,7 +1807,7 @@
           nav: "04. Tomograf TK",
           code: "STREFA 04 / 08 — PLANOWANIE 3D",
           title: "Pracownia Tomografii Komputerowej (TK)",
-          desc: "Własny tomograf wykonuje trójwymiarowe skany niezbędne do zaplanowania wiązki. Tworzymy tu również indywidualne materace próżniowe.",
+          desc: "Własny tomograf wykonuje trójwymiarowe skany czaszki i ciała niezbędne do zaplanowania wiązki. Tworzymy tu również indywidualne materace próżniowe.",
           factTitle: "PALETA DO PLANOWANIA RT (1:1)",
           factBody:
             "Na stole TK leży specjalna paleta RT. Identyczna paleta znajduje się na akceleratorze — dzięki temu układamy pacjenta z milimetrową precyzją.",
@@ -1384,7 +1820,7 @@
           nav: "05. Sterownia (Paweł)",
           code: "STREFA 05 / 08 — TECHNIK PAWEŁ I ZATWIERDZANIE PLANU",
           title: "Sterownia Tomografu i Akceleratora — Technik Paweł",
-          desc: "Z tego pomieszczenia technik elektroradiologii Paweł wraz z fizykiem medycznym sterują tomografem oraz akceleratorem liniowym, konturując guz i zatwierdzając plan wiązki 3D.",
+          desc: "Z tego pomieszczenia technik elektroradiologii Paweł wraz z fizykiem medycznym sterują tomografem oraz akceleratorem liniowym, konturując guz na przekroju TK i zatwierdzając plan wiązki 3D.",
           factTitle: "KAMERY HD I TELEMETRIA NA ŻYWO",
           factBody:
             "Przez żelbetowe ściany bunkra nie można wstawić zwykłego okna — dlatego technik Paweł i anestezjolog Emilia Sulik obserwują pacjenta na żywo przez system kamer HD.",
@@ -1432,7 +1868,7 @@
       ];
 
       // ============================================================================
-      // 4. INITIALIZE THREE.JS SCENE, CAMERA & LIGHTING
+      // 5. INITIALIZE THREE.JS SCENE, CAMERA & LIGHTING
       // ============================================================================
       const container = document.getElementById("webgl-container");
       const scene = new THREE.Scene();
@@ -1525,19 +1961,19 @@
       }
 
       addCeilingLight(-12.5, -6.5, 0xffe8c2, 1.15, 16);
-      addCeilingLight(-12.5, 5.5, 0xfff0d4, 1.05, 15);
+      addCeilingLight(-12.5, 5.5, 0xfff0d4, 1.15, 16);
       addCeilingLight(-4.0, -6.5, 0xf0f9ff, 1.1, 15);
       addCeilingLight(4.2, -6.5, 0xdbeafe, 1.1, 15);
       addCeilingLight(3.8, 6.5, 0xe0f2fe, 1.0, 15);
       addCeilingLight(10.5, 3.5, 0xfff4d6, 0.95, 14);
-      addCeilingLight(15.5, -6.5, 0xf0f9ff, 1.45, 18); // Jasne, czyste oświetlenie kliniczne w bunkrze
+      addCeilingLight(15.5, -6.5, 0xf0f9ff, 1.45, 18);
       addCeilingLight(15.5, -1.5, 0xe0f2fe, 1.1, 15);
       addCeilingLight(-4.5, 7.0, 0xffe4b5, 1.15, 15);
       addCeilingLight(-6.5, 0, 0xfff2db, 0.85, 14);
       addCeilingLight(2.5, 0, 0xfff2db, 0.85, 14);
 
       // ============================================================================
-      // 5. PROCEDURAL TEXTURES & CLEAN ARCHITECTURAL MATERIALS (NO LOCKER ARTIFACTS)
+      // 6. PROCEDURAL TEXTURES & CLEAN ARCHITECTURAL MATERIALS
       // ============================================================================
       function createRichWoodFloorTexture() {
         const c = document.createElement("canvas");
@@ -1587,18 +2023,15 @@
         return tex;
       }
 
-      // Nowoczesna okładzina ścienna bunkra medycznego: jasny kamień kliniczny z poziomym pasem dębowo-mosiężnym (ZERO szafek i kropek!)
       function createMedicalVaultWallTexture() {
         const c = document.createElement("canvas");
         c.width = 512;
         c.height = 512;
         const ctx = c.getContext("2d");
 
-        // Jasna, sterylna szaro-alabastrowa powierzchnia ściany osłonowej
         ctx.fillStyle = "#E6E4DF";
         ctx.fillRect(0, 0, 512, 512);
 
-        // Delikatny, ledwo widoczny szum mineralny (beton architektoniczny gładki)
         for (let i = 0; i < 600; i++) {
           ctx.fillStyle =
             i % 2 === 0 ? "rgba(255,255,255,0.18)" : "rgba(120,115,108,0.08)";
@@ -1607,11 +2040,9 @@
           ctx.fillRect(rx, ry, 4, 4);
         }
 
-        // Dolna strefa lamperii medycznej w ciepłym odcieniu kamienia
         ctx.fillStyle = "#D8D4CC";
         ctx.fillRect(0, 310, 512, 202);
 
-        // Elegancka pozioma listwa odbojowo-akustyczna (dąb + mosiądz) w połowie wysokości ściany
         ctx.fillStyle = "#C5A67C";
         ctx.fillRect(0, 296, 512, 16);
         ctx.fillStyle = "#8C6D46";
@@ -1623,6 +2054,13 @@
         tex.repeat.set(2, 1);
         return tex;
       }
+
+      // 3D Live Texture for CT Skull Cross-Section on Negatoscope & Paweł's TPS Monitor
+      ctMonitorCanvas = document.createElement("canvas");
+      ctMonitorCanvas.width = 320;
+      ctMonitorCanvas.height = 190;
+      drawCtSkullPlanOnCanvas(ctMonitorCanvas, 0, 98, 99);
+      ctMonitorTexture = new THREE.CanvasTexture(ctMonitorCanvas);
 
       const floorMat = new THREE.MeshStandardMaterial({
         map: createRichWoodFloorTexture(),
@@ -1722,11 +2160,10 @@
       scene.add(ceilingMesh);
 
       // ============================================================================
-      // 6. CLINIC ARCHITECTURAL LAYOUT & DETAILED PREFAB BUILDERS
+      // 7. CLINIC ARCHITECTURAL LAYOUT & DETAILED PREFAB BUILDERS
       // ============================================================================
       const CLINIC_WORLD = {
         walls: [
-          // Ściany zewnętrzne
           { x1: -17, z1: -12, x2: -8, z2: -12, style: "sage", thickness: 0.26 },
           { x1: -8, z1: -12, x2: 8.5, z2: -12, style: "navy", thickness: 0.26 },
           {
@@ -1744,7 +2181,6 @@
           { x1: -17, z1: -12, x2: -17, z2: 12, style: "sage", thickness: 0.26 },
           { x1: 19, z1: -12, x2: 19, z2: 12, style: "bunker", thickness: 0.85 },
 
-          // Ściany wewnętrzne działowe
           {
             x1: -8,
             z1: -12,
@@ -1778,7 +2214,6 @@
             thickness: 0.24
           },
 
-          // Zabiegowy (O2)
           {
             x1: 0,
             z1: -12,
@@ -1804,7 +2239,6 @@
             thickness: 0.24
           },
 
-          // Pracownia Tomografii TK
           {
             x1: 8.5,
             z1: -12,
@@ -1830,7 +2264,6 @@
             thickness: 0.24
           },
 
-          // Skrzydło Hotelowe
           { x1: 0, z1: 2.2, x2: 0, z2: 12, style: "interior", thickness: 0.24 },
           {
             x1: -8,
@@ -1849,7 +2282,6 @@
             thickness: 0.24
           },
 
-          // Sterownia
           {
             x1: 8.5,
             z1: 2.2,
@@ -1875,7 +2307,6 @@
             thickness: 0.24
           },
 
-          // Labirynt i Bunkier Akceleratora (gładkie ściany radiologiczne)
           {
             x1: 12.2,
             z1: -4.2,
@@ -1894,14 +2325,12 @@
           }
         ],
         objects: [
-          // Portale drzwiowe
           { type: "door_portal", x: -12.0, z: 1.5, rotY: 0 },
           { type: "door_portal", x: -3.85, z: -2.2, rotY: 0 },
           { type: "door_portal", x: 4.0, z: -2.2, rotY: 0 },
           { type: "door_portal", x: -4.25, z: 2.2, rotY: 0 },
           { type: "door_portal", x: 3.5, z: 2.2, rotY: 0 },
 
-          // Lamele ścienne
           { type: "wood_slats", x: -12.5, z: -11.8, rotY: 0 },
           { type: "wood_slats", x: -7.8, z: 9.5, rotY: Math.PI / 2 },
 
@@ -2013,11 +2442,12 @@
         return group;
       }
 
-      // Reusable Human Character Builder
+      // Reusable Human Character Builder with Expressive Eyes, Face & Sculpted Layered Hair
       function buildHumanCharacter({
         coatColor,
         scrubColor,
         hairColor,
+        eyeIrisColor = 0x2563eb,
         hairStyle = "bun",
         hasStethoscope = false,
         hasGlasses = false,
@@ -2025,25 +2455,27 @@
       }) {
         const g = new THREE.Group();
         const skinMat = new THREE.MeshStandardMaterial({
-          color: 0xf1c27d,
-          roughness: 0.6
+          color: 0xf4c992,
+          roughness: 0.52
         });
         const coatMat = new THREE.MeshStandardMaterial({
           color: coatColor,
-          roughness: 0.45
+          roughness: 0.42
         });
         const innerMat = new THREE.MeshStandardMaterial({
           color: scrubColor,
-          roughness: 0.5
+          roughness: 0.48
         });
         const hairMat = new THREE.MeshStandardMaterial({
           color: hairColor,
-          roughness: 0.65
+          roughness: hairStyle === "shoulder_blonde" ? 0.38 : 0.6,
+          metalness: hairStyle === "shoulder_blonde" ? 0.08 : 0.02
         });
 
+        // Legs
         [-0.1, 0.1].forEach((lx) => {
           const leg = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.065, 0.055, 0.78, 12),
+            new THREE.CylinderGeometry(0.065, 0.055, 0.78, 14),
             trimDarkMat
           );
           leg.position.set(lx, 0.39, 0);
@@ -2051,13 +2483,21 @@
           g.add(leg);
         });
 
+        // Torso & Neck
         const torso = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.19, 0.17, 0.68, 16),
+          new THREE.CylinderGeometry(0.19, 0.17, 0.68, 18),
           coatMat
         );
         torso.position.y = 1.1;
         torso.castShadow = true;
         g.add(torso);
+
+        const neck = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.06, 0.068, 0.14, 14),
+          skinMat
+        );
+        neck.position.set(0, 1.44, 0);
+        g.add(neck);
 
         const vNeck = new THREE.Mesh(
           new THREE.BoxGeometry(0.14, 0.28, 0.22),
@@ -2066,9 +2506,23 @@
         vNeck.position.set(0, 1.25, 0.09);
         g.add(vNeck);
 
+        // Coat lapels for medical coat
+        if (coatColor === 0xfafaf9) {
+          [-0.085, 0.085].forEach((lx) => {
+            const lapel = new THREE.Mesh(
+              new THREE.BoxGeometry(0.045, 0.32, 0.02),
+              coatMat
+            );
+            lapel.position.set(lx, 1.24, 0.195);
+            lapel.rotation.z = lx > 0 ? 0.18 : -0.18;
+            g.add(lapel);
+          });
+        }
+
+        // Arms & Hands
         [-0.23, 0.23].forEach((ax, idx) => {
           const arm = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05, 0.045, 0.58, 12),
+            new THREE.CylinderGeometry(0.052, 0.045, 0.58, 12),
             coatMat
           );
           arm.position.set(ax, 1.08, 0.04);
@@ -2107,40 +2561,121 @@
           g.add(sheet);
         }
 
+        // Head
         const head = new THREE.Mesh(
-          new THREE.SphereGeometry(0.145, 18, 16),
+          new THREE.SphereGeometry(0.145, 22, 20),
           skinMat
         );
+        head.scale.set(0.96, 1.04, 0.98);
         head.position.y = 1.58;
         head.castShadow = true;
         g.add(head);
 
-        [-0.048, 0.048].forEach((ex) => {
-          const eye = new THREE.Mesh(
-            new THREE.SphereGeometry(0.016, 8, 8),
-            trimDarkMat
-          );
-          eye.position.set(ex, 1.59, 0.13);
-          g.add(eye);
+        // Detailed Multi-Part Eyes (Sclera + Iris + Pupil + Specular Highlight + Eyebrows)
+        const scleraMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const irisMat = new THREE.MeshBasicMaterial({ color: eyeIrisColor });
+        const pupilMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
+        const browMat = new THREE.MeshStandardMaterial({
+          color: hairStyle === "shoulder_blonde" ? 0xb89446 : hairColor,
+          roughness: 0.6
         });
 
+        [-0.048, 0.048].forEach((ex) => {
+          // White Sclera
+          const sclera = new THREE.Mesh(
+            new THREE.SphereGeometry(0.023, 14, 14),
+            scleraMat
+          );
+          sclera.scale.set(1.18, 0.88, 0.55);
+          sclera.position.set(ex, 1.59, 0.132);
+          g.add(sclera);
+
+          // Colored Iris
+          const iris = new THREE.Mesh(
+            new THREE.SphereGeometry(0.014, 12, 12),
+            irisMat
+          );
+          iris.scale.set(1.0, 1.0, 0.45);
+          iris.position.set(ex, 1.59, 0.142);
+          g.add(iris);
+
+          // Dark Pupil
+          const pupil = new THREE.Mesh(
+            new THREE.SphereGeometry(0.008, 10, 10),
+            pupilMat
+          );
+          pupil.scale.set(1.0, 1.0, 0.45);
+          pupil.position.set(ex, 1.59, 0.146);
+          g.add(pupil);
+
+          // Eye Catchlight (White glint)
+          const glint = new THREE.Mesh(
+            new THREE.SphereGeometry(0.0035, 8, 8),
+            scleraMat
+          );
+          glint.position.set(ex + 0.005, 1.596, 0.149);
+          g.add(glint);
+
+          // Upper Eyelash / Eyelid line
+          const lash = new THREE.Mesh(
+            new THREE.BoxGeometry(0.036, 0.005, 0.012),
+            trimDarkMat
+          );
+          lash.position.set(ex, 1.605, 0.139);
+          lash.rotation.z = ex > 0 ? -0.06 : 0.06;
+          g.add(lash);
+
+          // Arched Eyebrow
+          const brow = new THREE.Mesh(
+            new THREE.BoxGeometry(0.04, 0.007, 0.012),
+            browMat
+          );
+          brow.position.set(ex, 1.624, 0.136);
+          brow.rotation.z = ex > 0 ? -0.09 : 0.09;
+          g.add(brow);
+        });
+
+        // Sculpted Nose & Soft Lips
+        const nose = new THREE.Mesh(
+          new THREE.ConeGeometry(0.016, 0.042, 10),
+          skinMat
+        );
+        nose.rotation.x = Math.PI / 2 - 0.25;
+        nose.position.set(0, 1.565, 0.148);
+        g.add(nose);
+
+        const lips = new THREE.Mesh(
+          new THREE.BoxGeometry(0.042, 0.011, 0.014),
+          new THREE.MeshStandardMaterial({ color: 0xd47a7a, roughness: 0.45 })
+        );
+        lips.position.set(0, 1.525, 0.138);
+        g.add(lips);
+
         if (hasGlasses) {
-          [-0.052, 0.052].forEach((gx) => {
+          [-0.05, 0.05].forEach((gx) => {
             const rim = new THREE.Mesh(
-              new THREE.TorusGeometry(0.028, 0.004, 8, 16),
+              new THREE.TorusGeometry(0.029, 0.004, 10, 20),
               trimDarkMat
             );
-            rim.position.set(gx, 1.59, 0.142);
+            rim.position.set(gx, 1.59, 0.148);
             g.add(rim);
           });
+          const bridge = new THREE.Mesh(
+            new THREE.BoxGeometry(0.024, 0.004, 0.004),
+            trimDarkMat
+          );
+          bridge.position.set(0, 1.594, 0.148);
+          g.add(bridge);
         }
 
+        // Hair Styles
         if (hairStyle === "shoulder_blonde") {
-          const topCap = new THREE.Mesh(
+          // Dr Anna Jaśkiewicz: Naturalne, warstwowe blond włosy do ramion z przedziałkiem i miękkimi falami
+          const crown = new THREE.Mesh(
             new THREE.SphereGeometry(
               0.156,
+              22,
               18,
-              14,
               0,
               Math.PI * 2,
               0,
@@ -2148,27 +2683,94 @@
             ),
             hairMat
           );
-          topCap.position.y = 1.59;
-          g.add(topCap);
+          crown.scale.set(1.03, 1.05, 1.05);
+          crown.position.set(0, 1.6, -0.008);
+          crown.castShadow = true;
+          g.add(crown);
 
-          [-0.125, 0.125].forEach((hx) => {
-            const sideLock = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.048, 0.058, 0.28, 12),
-              hairMat
-            );
-            sideLock.position.set(hx, 1.48, 0.01);
-            sideLock.rotation.z = hx > 0 ? -0.1 : 0.1;
-            sideLock.castShadow = true;
-            g.add(sideLock);
-          });
-
-          const backHair = new THREE.Mesh(
-            new THREE.BoxGeometry(0.28, 0.27, 0.1),
+          // Boczna grzywka (swept side bangs) opadająca miękko nad czołem
+          const leftSweptBang = new THREE.Mesh(
+            new THREE.SphereGeometry(0.088, 16, 14),
             hairMat
           );
-          backHair.position.set(0, 1.48, -0.09);
-          backHair.castShadow = true;
-          g.add(backHair);
+          leftSweptBang.scale.set(1.28, 0.46, 0.72);
+          leftSweptBang.position.set(-0.048, 1.685, 0.095);
+          leftSweptBang.rotation.z = 0.26;
+          leftSweptBang.rotation.x = 0.2;
+          g.add(leftSweptBang);
+
+          const rightSweptBang = new THREE.Mesh(
+            new THREE.SphereGeometry(0.078, 16, 14),
+            hairMat
+          );
+          rightSweptBang.scale.set(1.15, 0.44, 0.68);
+          rightSweptBang.position.set(0.062, 1.68, 0.09);
+          rightSweptBang.rotation.z = -0.32;
+          rightSweptBang.rotation.x = 0.2;
+          g.add(rightSweptBang);
+
+          // Warstwowe pasma okalające twarz i spływające na ramiona / obojczyki
+          [-1, 1].forEach((dir) => {
+            // Górne pasmo przy skroniach
+            const templeWave = new THREE.Mesh(
+              new THREE.SphereGeometry(0.072, 14, 14),
+              hairMat
+            );
+            templeWave.scale.set(0.62, 1.45, 0.85);
+            templeWave.position.set(dir * 0.132, 1.58, 0.025);
+            templeWave.rotation.z = dir * -0.12;
+            g.add(templeWave);
+
+            // Środkowa fala opadająca wzdłuż policzków i szyi
+            const cheekWave = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.048, 0.056, 0.24, 14),
+              hairMat
+            );
+            cheekWave.position.set(dir * 0.142, 1.47, 0.035);
+            cheekWave.rotation.z = dir * -0.1;
+            cheekWave.rotation.x = 0.12;
+            cheekWave.castShadow = true;
+            g.add(cheekWave);
+
+            // Zaokrąglone końcówki włosów spoczywające na ramionach i obojczykach
+            const shoulderCurl = new THREE.Mesh(
+              new THREE.SphereGeometry(0.062, 14, 14),
+              hairMat
+            );
+            shoulderCurl.scale.set(0.88, 0.72, 1.12);
+            shoulderCurl.position.set(dir * 0.152, 1.365, 0.055);
+            g.add(shoulderCurl);
+
+            // Boczna objętość za uchem
+            const sideVolume = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.055, 0.064, 0.28, 14),
+              hairMat
+            );
+            sideVolume.position.set(dir * 0.135, 1.48, -0.045);
+            sideVolume.rotation.z = dir * -0.08;
+            g.add(sideVolume);
+          });
+
+          // Tylna, miękko zaokrąglona tafla włosów sięgająca do ramion
+          const backCanopy = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.142, 0.165, 0.3, 18),
+            hairMat
+          );
+          backCanopy.scale.set(1.04, 1.0, 0.65);
+          backCanopy.position.set(0, 1.48, -0.075);
+          backCanopy.castShadow = true;
+          g.add(backCanopy);
+
+          // Zaokrąglony dół fryzury na plecach
+          [-0.08, 0, 0.08].forEach((bx) => {
+            const backTip = new THREE.Mesh(
+              new THREE.SphereGeometry(0.062, 12, 12),
+              hairMat
+            );
+            backTip.scale.set(1.1, 0.65, 0.85);
+            backTip.position.set(bx, 1.345, -0.08);
+            g.add(backTip);
+          });
         } else if (hairStyle === "curly") {
           const curlOffsets = [
             [0, 1.71, 0, 0.075],
@@ -2530,7 +3132,7 @@
 
             const laptop = new THREE.Mesh(
               new THREE.BoxGeometry(0.45, 0.3, 0.03),
-              new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+              new THREE.MeshBasicMaterial({ map: ctMonitorTexture })
             );
             laptop.position.set(0, 0.92, 0.1);
             g.add(laptop);
@@ -2590,7 +3192,7 @@
           }
 
           case "negatoscope_wall": {
-            [-0.7, 0.7].forEach((nx) => {
+            [-0.7, 0.7].forEach((nx, idx) => {
               const casing = new THREE.Mesh(
                 new THREE.BoxGeometry(1.12, 0.82, 0.06),
                 trimDarkMat
@@ -2600,7 +3202,9 @@
 
               const screen = new THREE.Mesh(
                 new THREE.BoxGeometry(1.02, 0.72, 0.07),
-                new THREE.MeshBasicMaterial({ color: 0xe0f2fe })
+                idx === 0
+                  ? new THREE.MeshBasicMaterial({ map: ctMonitorTexture })
+                  : new THREE.MeshBasicMaterial({ color: 0xe0f2fe })
               );
               screen.position.set(nx, 2.05, 0);
               g.add(screen);
@@ -2776,9 +3380,10 @@
               bezel.position.set(ox, 1.16, -0.18);
               g.add(bezel);
 
-              const monMat = new THREE.MeshBasicMaterial({
-                color: idx === 1 ? 0x10b981 : 0x38bdf8
-              });
+              const monMat =
+                idx === 1
+                  ? new THREE.MeshBasicMaterial({ map: ctMonitorTexture })
+                  : new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
               const mon = new THREE.Mesh(
                 new THREE.BoxGeometry(0.88, 0.52, 0.05),
                 monMat
@@ -2791,7 +3396,6 @@
           }
 
           case "labyrinth_warning_gate": {
-            // Podświetlany kaseton ostrzegawczy nad wejściem do labiryntu
             const signBox = new THREE.Mesh(
               new THREE.BoxGeometry(2.1, 0.36, 0.12),
               trimDarkMat
@@ -2812,7 +3416,6 @@
           }
 
           case "linac_vault": {
-            // 1. Okrągła płyta obrotowa w podłodze pod akceleratorem (Turntable Pit Ring)
             const floorDisc = new THREE.Mesh(
               new THREE.CylinderGeometry(2.15, 2.15, 0.02, 48),
               new THREE.MeshStandardMaterial({
@@ -2833,7 +3436,6 @@
             brassRing.position.set(0, 0.022, 0.4);
             g.add(brassRing);
 
-            // 2. Zaokrąglony korpus bazowy akceleratora (Varian TrueBeam / Halcyon style)
             const standBase = new THREE.Mesh(
               new THREE.CylinderGeometry(1.12, 1.22, 2.75, 36),
               medicalWhiteMat
@@ -2854,7 +3456,6 @@
             standAccentRing.position.set(0, 1.48, -0.28);
             g.add(standAccentRing);
 
-            // 3. Obracające się ramię Gantry 360° z głowicą MLC i ramionami CBCT
             const gantryGrp = new THREE.Group();
             gantryGrp.position.set(0, 1.48, -0.25);
             linacGantryGroup = gantryGrp;
@@ -2882,7 +3483,6 @@
             armDarkTrim.position.set(0, 1.25, 0.35);
             gantryGrp.add(armDarkTrim);
 
-            // Głowica terapeutyczna z kolimatorem wielolistkowym (MLC)
             const linacHead = new THREE.Mesh(
               new THREE.CylinderGeometry(0.46, 0.32, 0.48, 28),
               couchDarkMat
@@ -2897,7 +3497,6 @@
             mlcWindow.position.set(0, 0.96, 0.95);
             gantryGrp.add(mlcWindow);
 
-            // Boczne ramiona obrazowania kV CBCT (On-Board Imager)
             [-0.78, 0.78].forEach((sideX) => {
               const obiArm = new THREE.Mesh(
                 new THREE.BoxGeometry(0.12, 0.75, 0.16),
@@ -2914,7 +3513,6 @@
               gantryGrp.add(flatPanel);
             });
 
-            // Stożek wiązki terapeutycznej
             const cone = new THREE.Mesh(
               new THREE.ConeGeometry(0.44, 1.25, 28, 1, true),
               new THREE.MeshBasicMaterial({
@@ -2927,7 +3525,6 @@
             cone.position.set(0, 0.32, 0.95);
             gantryGrp.add(cone);
 
-            // 4. Stół robotyczny 6DoF (Carbon Fiber Couch + Bellows Column)
             const couchBase = new THREE.Mesh(
               new THREE.CylinderGeometry(0.42, 0.5, 0.22, 24),
               trimDarkMat
@@ -2945,7 +3542,6 @@
               g.add(bellow);
             });
 
-            // Płyta karbonowa stołu terapeutycznego
             const carbonTop = new THREE.Mesh(
               new THREE.BoxGeometry(0.62, 0.06, 2.55),
               trimDarkMat
@@ -2954,7 +3550,6 @@
             carbonTop.castShadow = true;
             g.add(carbonTop);
 
-            // Złota paleta pozycjonująca RT 1:1 + niebieski materac próżniowy
             const pallet = new THREE.Mesh(
               new THREE.BoxGeometry(0.56, 0.04, 2.05),
               brassMat
@@ -2972,7 +3567,6 @@
             vacCushion.position.set(0, 0.95, 1.02);
             g.add(vacCushion);
 
-            // Pilot ręczny (Hand Pendant) zawieszony z boku stołu
             const pendant = new THREE.Mesh(
               new THREE.BoxGeometry(0.08, 0.24, 0.14),
               new THREE.MeshStandardMaterial({ color: 0x38bdf8 })
@@ -2980,7 +3574,6 @@
             pendant.position.set(-0.34, 0.78, 1.45);
             g.add(pendant);
 
-            // 5. Zielone lasery pozycjonujące 3D przecinające się w izocentrum (y=1.05, z=1.05)
             const laserMat = new THREE.MeshBasicMaterial({
               color: 0x10b981,
               transparent: true,
@@ -3004,7 +3597,6 @@
           }
 
           case "anesthesia_cart": {
-            // Profesjonalne stanowisko do znieczulenia wziewnego z parownikiem izofluranu, respiratorem i kardiomonitorem
             const cartBody = new THREE.Mesh(
               new THREE.BoxGeometry(0.72, 1.18, 0.68),
               medicalWhiteMat
@@ -3013,7 +3605,6 @@
             cartBody.castShadow = true;
             g.add(cartBody);
 
-            // Szuflady z uchwytami
             [0.35, 0.65, 0.95].forEach((dy) => {
               const drawer = new THREE.Mesh(
                 new THREE.BoxGeometry(0.64, 0.22, 0.03),
@@ -3030,7 +3621,6 @@
               g.add(handle);
             });
 
-            // Parownik izofluranu + miech respiratora w przezroczystym cylindrze
             const vaporizer = new THREE.Mesh(
               new THREE.BoxGeometry(0.18, 0.26, 0.22),
               new THREE.MeshStandardMaterial({ color: 0x7e22ce })
@@ -3052,7 +3642,6 @@
             bellowsInner.position.set(0.16, 1.38, 0.1);
             g.add(bellowsInner);
 
-            // Butla tlenowa z tyłu wózka
             const o2Cylinder = new THREE.Mesh(
               new THREE.CylinderGeometry(0.1, 0.1, 0.85, 16),
               new THREE.MeshStandardMaterial({ color: 0x0284c7 })
@@ -3060,7 +3649,6 @@
             o2Cylinder.position.set(0, 0.65, -0.42);
             g.add(o2Cylinder);
 
-            // Kardiomonitor parametrów życiowych na wysięgniku
             const pole = new THREE.Mesh(
               new THREE.CylinderGeometry(0.025, 0.025, 0.55, 12),
               chromeMat
@@ -3085,7 +3673,6 @@
           }
 
           case "vault_interior_architecture": {
-            // 1. Podświetlany panel sufitowy "Sky Ceiling" nad stołem akceleratora
             const skyFrame = new THREE.Mesh(
               new THREE.BoxGeometry(3.2, 0.06, 2.4),
               medicalWhiteMat
@@ -3104,7 +3691,6 @@
             skyPanel.position.set(0, 3.81, 0);
             g.add(skyPanel);
 
-            // 2. Ścienne panele dozymetryczne i kamery telewizji przemysłowej HD (CCTV)
             const dosimetryBoard = new THREE.Mesh(
               new THREE.BoxGeometry(0.08, 1.4, 2.2),
               medicalWhiteMat
@@ -3119,7 +3705,6 @@
             dosimetryScreen.position.set(3.31, 1.75, 1.8);
             g.add(dosimetryScreen);
 
-            // 2 Kamery HD PTZ w narożnikach bunkra skierowane na pacjenta
             [
               [3.1, 3.35, 3.8],
               [-2.3, 3.35, -4.8]
@@ -3321,6 +3906,7 @@
               coatColor: 0x2e443b,
               scrubColor: 0xc5a67c,
               hairColor: 0x3b2314,
+              eyeIrisColor: 0x4b5320,
               hairStyle: "bun",
               hasStethoscope: false
             });
@@ -3332,7 +3918,8 @@
             const drAnna = buildHumanCharacter({
               coatColor: 0xfafaf9,
               scrubColor: 0x0284c7,
-              hairColor: 0xe6c265,
+              hairColor: 0xebd07a,
+              eyeIrisColor: 0x2563eb,
               hairStyle: "shoulder_blonde",
               hasStethoscope: true
             });
@@ -3345,6 +3932,7 @@
               coatColor: 0x0d9488,
               scrubColor: 0xfafaf9,
               hairColor: 0x5c3317,
+              eyeIrisColor: 0x059669,
               hairStyle: "curly",
               hasStethoscope: true,
               hasClipboard: true
@@ -3358,6 +3946,7 @@
               coatColor: 0x1e3a8a,
               scrubColor: 0x38bdf8,
               hairColor: 0x3a281c,
+              eyeIrisColor: 0x1d4ed8,
               hairStyle: "short_male",
               hasStethoscope: false,
               hasGlasses: true
@@ -3384,7 +3973,7 @@
       buildClinicScene();
 
       // ============================================================================
-      // 7. DYNAMIC PET MODELS: WHITE POODLE WITH BROWN RUMP PATCH & PATIENT PET
+      // 8. DYNAMIC PET MODELS: WHITE POODLE WITH BROWN RUMP PATCH & PATIENT PET
       // ============================================================================
       function createWhitePoodleWithBrownPatch(scale = 1.08) {
         const root = new THREE.Group();
@@ -3847,7 +4436,7 @@
       }
 
       // ============================================================================
-      // 8. WAYPOINT RINGS & FLOATING POI LABELS
+      // 9. WAYPOINT RINGS & FLOATING POI LABELS
       // ============================================================================
       const waypointMeshes = [];
       const ringGeo = new THREE.RingGeometry(0.32, 0.44, 32);
@@ -3949,7 +4538,7 @@
       }
 
       // ============================================================================
-      // 9. MODE SWITCHING & MISSION FLOW
+      // 10. MODE SWITCHING & MISSION FLOW
       // ============================================================================
       function switchAppMode(mode) {
         appMode = mode;
@@ -3976,6 +4565,7 @@
           document
             .getElementById("oncologyScenarioBox")
             .classList.add("hidden");
+          document.getElementById("drawerCtPlanBox").classList.add("hidden");
           toggleDrawer(true);
           walkToWaypoint(currentWaypointIdx);
         }
@@ -4025,7 +4615,18 @@
         document.getElementById("drawer-img").src = m.img;
         document.getElementById("drawer-next-btn").textContent = m.btnText;
 
-        // Show Oncology Scenario Selector in Step 2 (Dr Anna Jaśkiewicz)
+        const ctBox = document.getElementById("drawerCtPlanBox");
+        if (
+          currentMissionStep === 2 ||
+          currentMissionStep === 4 ||
+          currentMissionStep === 5
+        ) {
+          ctBox.classList.remove("hidden");
+          refreshAllCtPlanCanvases();
+        } else {
+          ctBox.classList.add("hidden");
+        }
+
         const oncoBox = document.getElementById("oncologyScenarioBox");
         if (currentMissionStep === 2) {
           oncoBox.classList.remove("hidden");
@@ -4033,7 +4634,6 @@
           oncoBox.classList.add("hidden");
         }
 
-        // Show Treatment Planning Approval in Step 5 (Technician Paweł)
         const simBox = document.getElementById("physicsSimBox");
         if (currentMissionStep === 5) {
           simBox.classList.remove("hidden");
@@ -4057,7 +4657,7 @@
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
         targetYaw += diff;
-        targetPitch = -0.08;
+        targetPitch = -0.06;
 
         missionPetHolder.position.set(m.petPos.x, m.petPos.y, m.petPos.z);
         if (carrierShell) carrierShell.visible = !!m.petPos.inCarrier;
@@ -4069,7 +4669,6 @@
       function handlePrimaryAction() {
         if (appMode === "mission") {
           const steps = getMissionSteps();
-          // Jeśli jesteśmy w Sterowni (krok 6, index 5) i plan nie został jeszcze zatwierdzony, najpierw zatwierdzamy plan!
           if (currentMissionStep === 5 && !isPlanApproved) {
             approveTreatmentPlan();
             return;
@@ -4107,7 +4706,7 @@
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
         targetYaw += diff;
-        targetPitch = -0.06;
+        targetPitch = -0.05;
 
         if (appMode === "tour") {
           const nextWp = WAYPOINTS[(index + 1) % WAYPOINTS.length];
@@ -4124,9 +4723,17 @@
           document.getElementById("drawer-next-btn").textContent =
             `Idź dalej: ${nextWp.nav} →`;
 
-          // W trybie zwiedzania pokaż też selektor chorób u dr Jaśkiewicz i zatwierdzanie planu w Sterowni
           const oncoBox = document.getElementById("oncologyScenarioBox");
           const simBox = document.getElementById("physicsSimBox");
+          const ctBox = document.getElementById("drawerCtPlanBox");
+
+          if (index === 1 || index === 3 || index === 4) {
+            ctBox.classList.remove("hidden");
+            refreshAllCtPlanCanvases();
+          } else {
+            ctBox.classList.add("hidden");
+          }
+
           if (index === 1) {
             oncoBox.classList.remove("hidden");
           } else {
@@ -4171,7 +4778,7 @@
       }
 
       // ============================================================================
-      // 10. TOUCH & MOUSE NAVIGATION
+      // 11. TOUCH & MOUSE NAVIGATION
       // ============================================================================
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
@@ -4317,7 +4924,7 @@
       }
 
       // ============================================================================
-      // 11. LIVE 2D RADAR MINIMAP
+      // 12. LIVE 2D RADAR MINIMAP
       // ============================================================================
       const radarCanvas = document.getElementById("radarCanvas");
       const rCtx = radarCanvas ? radarCanvas.getContext("2d") : null;
@@ -4424,7 +5031,7 @@
       }
 
       // ============================================================================
-      // 12. MAIN ANIMATION LOOP
+      // 13. MAIN ANIMATION LOOP
       // ============================================================================
       const clock = new THREE.Clock();
 
