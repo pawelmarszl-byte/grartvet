@@ -1,0 +1,3668 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>RTWet 3D — Wirtualny Spacer i Ścieżka Pacjenta (WebGL)</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              alabaster: "#F7F5F0",
+              obsidian: "#0E0E0D",
+              charcoal: "#1A1918",
+              brass: "#C5A67C",
+              brassDark: "#9A784C",
+              clinical: "#38BDF8",
+              emerald: "#34D399"
+            },
+            fontFamily: {
+              serif: ["Instrument Serif", "Georgia", "serif"],
+              sans: ["Plus Jakarta Sans", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"]
+            }
+          }
+        }
+      };
+    </script>
+
+    <!-- Three.js (WebGL 3D Engine) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #161514;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+      }
+      #webgl-container {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+        touch-action: none;
+      }
+      #webgl-container:active {
+        cursor: grabbing;
+      }
+      #webgl-container.hover-interactive {
+        cursor: pointer;
+      }
+
+      /* 3D Floating HTML Labels */
+      .poi-marker {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        pointer-events: auto;
+        transition:
+          opacity 0.25s ease,
+          transform 0.2s ease;
+        z-index: 20;
+      }
+      .poi-marker:hover {
+        transform: translate(-50%, -50%) scale(1.08);
+        z-index: 30;
+      }
+      @keyframes pulseHalo {
+        0% {
+          transform: scale(0.9);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(2.1);
+          opacity: 0;
+        }
+      }
+      .poi-ring::after {
+        content: "";
+        position: absolute;
+        inset: -4px;
+        border-radius: 9999px;
+        border: 1px solid #c5a67c;
+        animation: pulseHalo 2s infinite cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* Hide scrollbar in horizontal nav on mobile */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+
+  <body class="font-sans text-alabaster antialiased">
+    <!-- ================= 3D WEBGL VIEWPORT ================= -->
+    <div id="webgl-container"></div>
+
+    <!-- ================= FLOATING 3D MARKERS LAYER ================= -->
+    <div
+      id="markers-layer"
+      class="absolute inset-0 pointer-events-none overflow-hidden"
+    ></div>
+
+    <!-- ================= WELCOME PERSONALIZATION MODAL ================= -->
+    <div
+      id="welcomeModal"
+      class="fixed inset-0 z-50 bg-obsidian/95 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <div
+        class="max-w-lg w-full bg-charcoal border border-brass/40 p-6 sm:p-8 shadow-2xl relative my-auto"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <span
+            class="w-2.5 h-2.5 rounded-full bg-emerald animate-pulse"
+          ></span>
+          <span
+            class="font-mono text-[10px] uppercase tracking-[0.2em] text-brass"
+            >WIRTUALNY INSTYTUT RTWET (MIEDNIEWICE)</span
+          >
+        </div>
+
+        <h1
+          class="font-serif text-3xl sm:text-4xl text-alabaster leading-tight"
+        >
+          Poznaj ścieżkę leczenia Twojego pupila w 3D
+        </h1>
+        <p
+          class="text-xs sm:text-sm text-alabaster/75 mt-2 font-light leading-relaxed"
+        >
+          Wpisz imię swojego zwierzaka i wybierz gatunek. Przejdziemy wspólnie
+          przez 7 etapów wizyty — od powitania u Pani Marzeny na recepcji, przez
+          konsultację z dr Anną Jaśkiewicz, sedację u anestezjolog Emilii Sulik,
+          planowanie wiązki u technika Pawła, aż po bezbolesny zabieg.
+        </p>
+
+        <div class="mt-6 space-y-5">
+          <!-- Wybór gatunku -->
+          <div>
+            <label
+              class="block font-mono text-[10px] uppercase tracking-widest text-brass mb-2"
+              >1. Wybierz podopiecznego</label
+            >
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onclick="selectPetSpecies('cat')"
+                id="speciesBtn-cat"
+                class="flex flex-col items-center justify-center p-4 border-2 border-brass bg-brass/15 text-alabaster transition"
+              >
+                <span class="text-3xl mb-1">🐈</span>
+                <span class="font-mono text-xs uppercase font-semibold"
+                  >Kot</span
+                >
+                <span class="text-[10px] text-alabaster/60 mt-0.5"
+                  >np. 4.8 kg</span
+                >
+              </button>
+
+              <button
+                type="button"
+                onclick="selectPetSpecies('dog')"
+                id="speciesBtn-dog"
+                class="flex flex-col items-center justify-center p-4 border-2 border-white/15 bg-white/5 text-alabaster/70 hover:text-white transition"
+              >
+                <span class="text-3xl mb-1">🐕</span>
+                <span class="font-mono text-xs uppercase font-semibold"
+                  >Pies</span
+                >
+                <span class="text-[10px] text-alabaster/60 mt-0.5"
+                  >np. 18.5 kg</span
+                >
+              </button>
+            </div>
+          </div>
+
+          <!-- Imię zwierzaka -->
+          <div>
+            <label
+              for="petNameInput"
+              class="block font-mono text-[10px] uppercase tracking-widest text-brass mb-2"
+              >2. Imię Twojego zwierzaka</label
+            >
+            <input
+              id="petNameInput"
+              type="text"
+              maxlength="22"
+              placeholder="np. Mruczek, Burek, Luna..."
+              value="Mruczek"
+              class="w-full bg-obsidian border border-white/25 px-4 py-3 text-sm text-alabaster focus:outline-none focus:border-brass font-sans"
+            />
+          </div>
+
+          <!-- Przyciski startu -->
+          <div class="pt-2 flex flex-col sm:flex-row gap-2.5">
+            <button
+              type="button"
+              onclick="startPersonalizedExperience('mission')"
+              class="flex-1 py-3.5 px-5 bg-brass text-obsidian font-mono text-xs uppercase tracking-wider font-bold hover:bg-alabaster transition text-center shadow-lg"
+            >
+              Rozpocznij ścieżkę z pupilem →
+            </button>
+            <button
+              type="button"
+              onclick="startPersonalizedExperience('tour')"
+              class="py-3.5 px-4 border border-white/20 text-alabaster/80 hover:text-white hover:border-white/40 font-mono text-[11px] uppercase tracking-wider transition text-center"
+            >
+              Swobodny spacer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TOP HUD BAR ================= -->
+    <header
+      class="absolute top-0 left-0 right-0 z-30 p-2.5 sm:p-5 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 pointer-events-none"
+    >
+      <!-- Top Row on Mobile: Brand & Mode Switcher -->
+      <div class="flex items-center justify-between gap-2">
+        <!-- Brand & Current Room Indicator -->
+        <div
+          class="bg-obsidian/90 backdrop-blur-md border border-white/15 px-3.5 py-2.5 sm:px-5 sm:py-3 pointer-events-auto flex items-center gap-3 shadow-2xl flex-1 sm:flex-initial min-w-0"
+        >
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span
+                class="w-2 h-2 rounded-full bg-emerald animate-pulse shrink-0"
+              ></span>
+              <span
+                class="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-brass truncate"
+                id="hud-room-code"
+                >MISJA PACJENTA • ETAP 1/7</span
+              >
+            </div>
+            <h1
+              class="font-serif text-lg sm:text-2xl md:text-3xl text-alabaster tracking-tight leading-none mt-0.5 truncate"
+              id="hud-room-title"
+            >
+              Recepcja i Lobby RTWet
+            </h1>
+          </div>
+        </div>
+
+        <!-- Mode Switcher + Pet Change Button -->
+        <div
+          class="bg-obsidian/90 backdrop-blur-md border border-brass/50 p-1 pointer-events-auto flex items-center gap-1 shadow-2xl shrink-0"
+        >
+          <button
+            onclick="switchAppMode('mission')"
+            id="modeBtn-mission"
+            class="px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition bg-brass text-obsidian font-semibold whitespace-nowrap"
+          >
+            <span id="hud-pet-badge">🐈 Mruczek</span>
+          </button>
+          <button
+            onclick="switchAppMode('tour')"
+            id="modeBtn-tour"
+            class="px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/75 hover:text-white whitespace-nowrap"
+          >
+            👁️ 8 Stref
+          </button>
+          <button
+            onclick="openWelcomeModal()"
+            title="Zmień imię i gatunek pupila"
+            class="px-2 py-1.5 text-[10px] font-mono uppercase text-brass hover:bg-white/10 transition"
+          >
+            ✎
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Teleport Bar (Horizontally Scrollable on Mobile) -->
+      <div
+        id="tourNavBar"
+        class="flex items-center gap-1 bg-obsidian/90 backdrop-blur-md border border-white/15 p-1.5 pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar max-w-full"
+      >
+        <button
+          onclick="walkToWaypoint(0)"
+          id="navBtn-0"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition bg-brass text-obsidian font-semibold shrink-0"
+        >
+          01. Recepcja
+        </button>
+        <button
+          onclick="walkToWaypoint(1)"
+          id="navBtn-1"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/70 hover:text-white shrink-0"
+        >
+          02. Dr Jaśkiewicz
+        </button>
+        <button
+          onclick="walkToWaypoint(2)"
+          id="navBtn-2"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/70 hover:text-white shrink-0"
+        >
+          03. Zabiegowy (O₂)
+        </button>
+        <button
+          onclick="walkToWaypoint(3)"
+          id="navBtn-3"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/70 hover:text-white shrink-0"
+        >
+          04. Tomograf TK
+        </button>
+        <button
+          onclick="walkToWaypoint(4)"
+          id="navBtn-4"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/70 hover:text-white shrink-0"
+        >
+          05. Sterownia (Paweł)
+        </button>
+        <button
+          onclick="walkToWaypoint(5)"
+          id="navBtn-5"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/70 hover:text-white shrink-0"
+        >
+          06. Labirynt
+        </button>
+        <button
+          onclick="walkToWaypoint(6)"
+          id="navBtn-6"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/70 hover:text-white shrink-0"
+        >
+          07. Akcelerator
+        </button>
+        <button
+          onclick="walkToWaypoint(7)"
+          id="navBtn-7"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/70 hover:text-white shrink-0"
+        >
+          08. Hotel
+        </button>
+
+        <div class="h-4 w-[1px] bg-white/15 mx-0.5 shrink-0"></div>
+
+        <button
+          onclick="toggleCameraViewMode()"
+          id="camModeBtn"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase bg-white/10 text-emerald hover:bg-emerald hover:text-obsidian transition shrink-0"
+        >
+          🎥 Kamera: Oczy
+        </button>
+
+        <button
+          onclick="openDroneModal()"
+          class="px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase bg-white/10 text-brass hover:bg-brass hover:text-obsidian transition shrink-0"
+        >
+          ✈ Dron
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= BOTTOM LEFT: LIVE 2D RADAR MINIMAP (DESKTOP/TABLET) ================= -->
+    <div
+      class="absolute bottom-6 left-6 z-20 hidden md:block bg-obsidian/90 backdrop-blur-md border border-white/15 p-3 pointer-events-auto shadow-2xl w-60"
+    >
+      <div
+        class="flex items-center justify-between text-[9px] font-mono uppercase tracking-widest text-brass mb-2"
+      >
+        <span>RADAR OŚRODKA (KLIKNIJ BY IŚĆ)</span>
+        <span id="ui-coords">X:0 Z:0</span>
+      </div>
+      <canvas
+        id="radarCanvas"
+        width="216"
+        height="148"
+        class="w-full h-auto bg-charcoal border border-white/10 cursor-pointer"
+      ></canvas>
+      <div
+        class="flex items-center justify-between text-[9px] font-mono text-alabaster/75 mt-1.5 pb-1 border-b border-white/10"
+      >
+        <span>🐩 Pudel z łatką</span>
+        <span id="radar-patient-label">🐈 Pacjent: Mruczek</span>
+      </div>
+      <div class="mt-1.5 text-[10px] font-mono text-alabaster/60 leading-tight">
+        • Kliknij podłogę lub pierścień = Idź<br />
+        • Przeciągnij palcem / myszą = Obrót 360°<br />
+        • Klawisze WASD / Strzałki = Chodzenie
+      </div>
+    </div>
+
+    <!-- ================= RIGHT / BOTTOM DRAWER: MISSION & ROOM INSPECTION CARD ================= -->
+    <aside
+      id="infoDrawer"
+      class="fixed bottom-0 left-0 right-0 md:left-auto md:top-28 md:right-6 md:bottom-6 md:w-96 max-h-[58vh] md:max-h-none z-30 bg-obsidian/95 backdrop-blur-xl border-t md:border border-white/20 p-4 sm:p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 translate-y-0 md:translate-x-0"
+    >
+      <div class="space-y-3 sm:space-y-4 overflow-y-auto pr-1">
+        <div
+          class="flex items-center justify-between border-b border-white/15 pb-2.5"
+        >
+          <span
+            class="text-[10px] font-mono uppercase tracking-widest text-brass"
+            id="drawer-tag"
+            >SCENARIUSZ WIZYTY PACJENTA</span
+          >
+          <button
+            onclick="toggleDrawer(false)"
+            class="text-xs font-mono text-alabaster/60 hover:text-white px-2 py-0.5 border border-white/10"
+          >
+            Ukryj ✕
+          </button>
+        </div>
+
+        <!-- Mission Progress Stepper -->
+        <div id="missionStepperBox" class="space-y-1.5">
+          <div
+            class="flex items-center justify-between text-[10px] font-mono text-emerald"
+          >
+            <span id="mission-step-badge">ETAP 1 Z 7</span>
+            <span id="mission-cat-status">Status: W transporterze</span>
+          </div>
+          <div class="w-full h-1.5 bg-white/10 overflow-hidden">
+            <div
+              id="mission-progress-bar"
+              class="h-full bg-emerald transition-all duration-500"
+              style="width: 14%"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Authentic RTWet Photo Thumbnail (Hidden on very small mobile screens to save space, visible on sm+) -->
+        <div
+          class="hidden sm:block relative h-32 border border-white/15 overflow-hidden bg-charcoal shrink-0"
+        >
+          <img
+            id="drawer-img"
+            src="https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/akcelerator-scaled_light.jpg"
+            alt="RTWet"
+            class="w-full h-full object-cover"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-obsidian/80 via-transparent to-transparent"
+          ></div>
+          <span
+            class="absolute bottom-2 left-3 text-[10px] font-mono uppercase tracking-wider text-brass bg-obsidian/80 px-2 py-0.5 border border-white/10"
+            id="drawer-sub"
+          >
+            STREFA KLINICZNA RTWET
+          </span>
+        </div>
+
+        <h2
+          class="font-serif text-2xl sm:text-3xl text-alabaster leading-tight"
+          id="drawer-title"
+        >
+          Recepcja i Rejestracja
+        </h2>
+
+        <p
+          class="text-xs sm:text-sm text-alabaster/80 leading-relaxed font-light"
+          id="drawer-desc"
+        >
+          Opis pomieszczenia...
+        </p>
+
+        <!-- Highlighted Technical / Clinical Fact Box -->
+        <div
+          class="p-3 bg-white/[0.04] border-l-2 border-brass text-xs text-alabaster/90 space-y-1"
+        >
+          <div
+            class="font-mono text-[10px] uppercase tracking-wider text-brass"
+            id="drawer-fact-title"
+          >
+            ZADANIE W TYM KROKU
+          </div>
+          <div id="drawer-fact-body">Szczegóły zadania...</div>
+        </div>
+
+        <!-- Interactive Physics Dose Simulator (Visible in Control Room Step) -->
+        <div
+          id="physicsSimBox"
+          class="hidden p-3 bg-emerald/10 border border-emerald/40 space-y-2"
+        >
+          <div
+            class="flex items-center justify-between text-[10px] font-mono uppercase text-emerald"
+          >
+            <span>Symulator Wiązki 3D (Technik Paweł)</span>
+            <span id="doseValLabel">98% w guz / 0% oko</span>
+          </div>
+          <input
+            type="range"
+            min="1"
+            max="100"
+            value="98"
+            oninput="
+              document.getElementById('doseValLabel').textContent =
+                this.value + '% precyzji MLC'
+            "
+            class="w-full accent-emerald cursor-pointer"
+          />
+          <p class="text-[11px] text-alabaster/75">
+            Technik elektroradiologii Paweł wraz z fizykiem medycznym modelują
+            wiązkę tak, by ominąć zdrowe narządy i soczewki oczu.
+          </p>
+        </div>
+      </div>
+
+      <!-- Next Waypoint / Mission Action Button -->
+      <div
+        class="pt-3 mt-2 border-t border-white/15 flex items-center justify-between gap-2 shrink-0"
+      >
+        <button
+          onclick="handlePrevAction()"
+          class="px-3.5 py-2.5 sm:py-3 border border-white/20 text-xs font-mono uppercase hover:bg-white/10 transition"
+        >
+          ←
+        </button>
+        <button
+          onclick="handlePrimaryAction()"
+          class="flex-1 py-2.5 sm:py-3 px-4 bg-brass text-obsidian font-mono text-xs uppercase tracking-wider font-semibold hover:bg-alabaster transition text-center shadow-lg"
+          id="drawer-next-btn"
+        >
+          Wykonaj krok misji →
+        </button>
+      </div>
+    </aside>
+
+    <!-- Button to Re-open Drawer if Closed -->
+    <button
+      id="openDrawerBtn"
+      onclick="toggleDrawer(true)"
+      class="hidden fixed bottom-5 right-5 z-30 px-4 py-3 bg-brass text-obsidian font-mono text-xs uppercase tracking-wider font-semibold shadow-2xl"
+    >
+      ⓘ Pokaż kartę wizyty
+    </button>
+
+    <!-- ================= DRONE VIDEO MODAL ================= -->
+    <div
+      id="droneModal"
+      class="hidden fixed inset-0 z-50 bg-obsidian/95 backdrop-blur-lg flex items-center justify-center p-4 sm:p-8"
+    >
+      <div
+        class="max-w-4xl w-full bg-charcoal border border-white/20 overflow-hidden shadow-2xl"
+      >
+        <div
+          class="px-5 py-3.5 border-b border-white/15 flex items-center justify-between"
+        >
+          <span class="text-brass font-mono text-xs uppercase tracking-widest"
+            >✈ LOT DRONEM NAD OŚRODKIEM RTWET (MIEDNIEWICE)</span
+          >
+          <button
+            onclick="closeDroneModal()"
+            class="px-3 py-1 border border-white/20 text-xs font-mono uppercase hover:bg-white hover:text-obsidian transition"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="aspect-video bg-black">
+          <video
+            id="droneVideo"
+            controls
+            playsinline
+            class="w-full h-full object-cover"
+          >
+            <source
+              src="https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/09/DJI_0147_1.mp4"
+              type="video/mp4"
+            />
+          </video>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 3D ENGINE & CLINICAL MISSION LOGIC ================= -->
+    <script>
+      // ============================================================================
+      // 1. PERSONALIZED PATIENT STATE (NAME & SPECIES)
+      // ============================================================================
+      let appMode = "mission"; // 'mission' | 'tour'
+      let cameraViewMode = "fpp"; // 'fpp' | 'orbit'
+      let currentWaypointIdx = 0;
+      let currentMissionStep = 0;
+
+      const patientProfile = {
+        name: "Mruczek",
+        species: "cat", // 'cat' | 'dog'
+        weightKg: "4.85 kg"
+      };
+
+      function selectPetSpecies(species) {
+        patientProfile.species = species;
+        patientProfile.weightKg = species === "cat" ? "4.85 kg" : "18.40 kg";
+
+        const catBtn = document.getElementById("speciesBtn-cat");
+        const dogBtn = document.getElementById("speciesBtn-dog");
+        const nameInput = document.getElementById("petNameInput");
+
+        if (species === "cat") {
+          catBtn.className =
+            "flex flex-col items-center justify-center p-4 border-2 border-brass bg-brass/15 text-alabaster transition";
+          dogBtn.className =
+            "flex flex-col items-center justify-center p-4 border-2 border-white/15 bg-white/5 text-alabaster/70 hover:text-white transition";
+          if (nameInput.value === "Burek" || !nameInput.value.trim()) {
+            nameInput.value = "Mruczek";
+          }
+        } else {
+          dogBtn.className =
+            "flex flex-col items-center justify-center p-4 border-2 border-brass bg-brass/15 text-alabaster transition";
+          catBtn.className =
+            "flex flex-col items-center justify-center p-4 border-2 border-white/15 bg-white/5 text-alabaster/70 hover:text-white transition";
+          if (nameInput.value === "Mruczek" || !nameInput.value.trim()) {
+            nameInput.value = "Burek";
+          }
+        }
+      }
+
+      function openWelcomeModal() {
+        document.getElementById("welcomeModal").classList.remove("hidden");
+      }
+
+      function startPersonalizedExperience(mode) {
+        const rawName = document.getElementById("petNameInput").value.trim();
+        patientProfile.name =
+          rawName.length > 0
+            ? rawName
+            : patientProfile.species === "cat"
+              ? "Mruczek"
+              : "Burek";
+
+        const icon = patientProfile.species === "cat" ? "🐈" : "🐕";
+        document.getElementById("hud-pet-badge").textContent =
+          `${icon} ${patientProfile.name}`;
+        const radarLbl = document.getElementById("radar-patient-label");
+        if (radarLbl) {
+          radarLbl.textContent = `${icon} Pacjent: ${patientProfile.name}`;
+        }
+
+        // Przebuduj model 3D pacjenta pod wybrany gatunek (kot lub pies)
+        rebuildMissionPetMesh();
+
+        document.getElementById("welcomeModal").classList.add("hidden");
+        switchAppMode(mode);
+      }
+
+      // ============================================================================
+      // 2. DYNAMIC MISSION STEPS & 8 TOUR WAYPOINTS
+      // ============================================================================
+      function getMissionSteps() {
+        const n = patientProfile.name;
+        const isCat = patientProfile.species === "cat";
+        const speciesNoun = isCat ? "kot" : "pies";
+        const speciesGen = isCat ? "kota" : "psa";
+        const w = patientProfile.weightKg;
+
+        return [
+          {
+            step: 0,
+            waypointIdx: 0,
+            pos: { x: -12.0, z: -5.5 },
+            lookAt: { x: -12.5, z: -9.8 },
+            petPos: { x: -11.4, y: 0.0, z: -8.6, inCarrier: isCat },
+            code: "MISJA PACJENTA • KROK 1 Z 7",
+            status: `${n}: Przyjazd do ośrodka`,
+            title: `1. Przyjazd z pupilem (${n}) i rejestracja u Pani Marzeny`,
+            desc: `Wchodzisz z pupilem (${n}) do przestronnego lobby RTWet z dębowymi lamelami. Za ladą recepcyjną wita Was Pani Marzena, odbiera dotychczasową dokumentację medyczną i zakłada kartę pacjenta.`,
+            factTitle: "KROK 1: FORMALNOŚCI I WYCISZENIE",
+            factBody: `Pani Marzena dba o to, by formalności trwały chwilę. W lobby nie ma zapachu typowej lecznicy, a po korytarzu przyjaźnie spaceruje biały pudel z brązową łatką.`,
+            btnText: `Postaw pupila (${n}) na wadze →`,
+            img: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=900&q=80"
+          },
+          {
+            step: 1,
+            waypointIdx: 0,
+            pos: { x: -9.8, z: -6.8 },
+            lookAt: { x: -9.4, z: -9.8 },
+            petPos: { x: -9.4, y: 0.08, z: -9.8, inCarrier: false },
+            code: "MISJA PACJENTA • KROK 2 Z 7",
+            status: `Waga: ${w} (Pomiar OK)`,
+            title: `2. Precyzyjne ważenie (${n}: ${w})`,
+            desc: `Przed wejściem do gabinetu ważymy ${speciesGen} na elektronicznej wadze weterynaryjnej przy recepcji. Wyświetlacz LED stabilizuje wynik: dokładnie ${w}.`,
+            factTitle: "DLACZEGO DOKŁADNA WAGA JEST KLUCZOWA?",
+            factBody: `Pomiar z dokładnością do 10 gramów pozwala anestezjolog Emilii Sulik obliczyć idealną, ultralekką dawkę sedacji wziewnej na czas 10-minutowego zabiegu.`,
+            btnText: `Wejdź do dr Anny Jaśkiewicz →`,
+            img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80"
+          },
+          {
+            step: 2,
+            waypointIdx: 1,
+            pos: { x: -11.8, z: 4.5 },
+            lookAt: { x: -14.2, z: 6.5 },
+            petPos: { x: -14.2, y: 0.9, z: 6.2, inCarrier: false },
+            code: "MISJA PACJENTA • KROK 3 Z 7",
+            status: "Konsultacja u dr Anny Jaśkiewicz",
+            title: `3. Konsultacja onkologiczna — dr Anna Jaśkiewicz`,
+            desc: `${n} znajduje się na stole diagnostycznym. Lekarz onkolog dr Anna Jaśkiewicz bada pacjenta, analizuje wyniki histopatologii na negatoskopach i kwalifikuje ${speciesGen} do precyzyjnej radioterapii.`,
+            factTitle: "OPIEKA DR ANNY JAŚKIEWICZ",
+            factBody: `Dr Anna Jaśkiewicz szczegółowo tłumaczy Ci plan leczenia i codziennie kontroluje samopoczucie pupila (${n}) podczas całego cyklu naświetlań.`,
+            btnText: `Przejdź do anestezjolog Emilii Sulik (O₂) →`,
+            img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80"
+          },
+          {
+            step: 3,
+            waypointIdx: 2,
+            pos: { x: -4.2, z: -5.2 },
+            lookAt: { x: -4.2, z: -8.8 },
+            petPos: { x: -4.5, y: 0.9, z: -8.5, inCarrier: false },
+            code: "MISJA PACJENTA • KROK 4 Z 7",
+            status: "Premedykacja u anestezjolog Emilii Sulik",
+            title: `4. Gabinet Zabiegowy — anestezjolog Emilia Sulik`,
+            desc: `W gabinecie zabiegowym czeka na Was anestezjolog Emilia Sulik. Zakłada malutki wenflon, bada krew w laboratorium na miejscu i podaje łagodną premedykację przy koncentratorze tlenu (O₂).`,
+            factTitle: "BEZPIECZNA SEDACJA I TLENOTERAPIA",
+            factBody: `Anestezjolog Emilia Sulik czuwa nad oddechem i pracą serca pupila (${n}). Po każdym zabiegu zwierzak wybudza się w kilka minut na ciepłym materacu z tlenem.`,
+            btnText: `Przejdź na Tomografię 3D (TK) →`,
+            img: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?auto=format&fit=crop&w=900&q=80"
+          },
+          {
+            step: 4,
+            waypointIdx: 3,
+            pos: { x: 4.0, z: -4.8 },
+            lookAt: { x: 4.2, z: -8.5 },
+            petPos: { x: 4.2, y: 0.85, z: -7.7, inCarrier: false },
+            code: "MISJA PACJENTA • KROK 5 Z 7",
+            status: "Skanowanie 3D na palecie RT",
+            title: `5. Tomografia Komputerowa 3D i Materac Próżniowy`,
+            desc: `Układamy śpiącego pacjenta (${n}) na złotej palecie RT i indywidualnym materacu próżniowym, który zapamiętuje kształt ciała. Lasery pozycjonujące wyznaczają izocentrum, a tomograf wykonuje skan 3D.`,
+            factTitle: "SYSTEM POZYCJONOWANIA 1:1",
+            factBody: `Identyczna paleta RT znajduje się na stole akceleratora — dzięki temu podczas każdego zabiegu ${n} leży z dokładnością poniżej 1 milimetra.`,
+            btnText: `Zobacz planowanie u technika Pawła →`,
+            img: "https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/tomograf-scaled_light.jpg"
+          },
+          {
+            step: 5,
+            waypointIdx: 4,
+            pos: { x: 3.8, z: 5.2 },
+            lookAt: { x: 3.8, z: 8.8 },
+            petPos: { x: 4.2, y: 0.85, z: -7.7, inCarrier: false },
+            code: "MISJA PACJENTA • KROK 6 Z 7",
+            status: "Planowanie wiązki: Technik Paweł",
+            title: `6. Sterownia — Technik Paweł i Planowanie Wiązki 3D`,
+            desc: `W sterowni technik elektroradiologii Paweł wraz z fizykiem medycznym i dr Anną Jaśkiewicz obrysowują na skanach TK guz oraz narządy krytyczne. Z tego miejsca Paweł steruje również pracą akceleratora i obserwuje pacjenta na kamerach HD.`,
+            factTitle: "INTERAKTYWNA KONSOLA TECHNIKA PAWŁA",
+            factBody: `Przesuń suwak poniżej, aby zobaczyć jak kolimator wielolistkowy (MLC) kształtuje pole napromieniania z milimetrową precyzją.`,
+            btnText: `Wejdź przez Labirynt do Bunkra →`,
+            img: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=900&q=80"
+          },
+          {
+            step: 6,
+            waypointIdx: 6,
+            pos: { x: 14.5, z: -3.8 },
+            lookAt: { x: 15.2, z: -8.2 },
+            petPos: { x: 15.2, y: 0.92, z: -7.3, inCarrier: false },
+            code: "MISJA PACJENTA • KROK 7 Z 7",
+            status: `${n}: Bezbolesna sesja RT (10 min)`,
+            title: `7. Bunkier Akceleratora Liniowego — Zabieg i Wybudzenie`,
+            desc: `Przechodzisz przez żelbetowy labirynt radiologiczny do serca instytutu. ${n} leży na stole akceleratora, a głowica (gantry 360°) obraca się bezgłośnie wokół niego. Anestezjolog Emilia Sulik i technik Paweł monitorują parametry na ekranach HD.`,
+            factTitle: "PO ZABIEGU ZWIERZĘ NIE PROMIENIUJE (0%)",
+            factBody: `Wiązka megawoltowa działa wyłącznie w ułamku sekundy włączenia aparatu. Po 10 minutach zabierasz wybudzonego pupila (${n}) na spacer do lasu lub do pokoju hotelowego!`,
+            btnText: `Zakończ w Pokoju Hotelowym →`,
+            img: "https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/akcelerator-scaled_light.jpg"
+          }
+        ];
+      }
+
+      const WAYPOINTS = [
+        {
+          id: 0,
+          pos: { x: -12, z: -5.2 },
+          lookAt: { x: -12.5, z: -10.0 },
+          nav: "01. Recepcja",
+          code: "STREFA 01 / 08 — WEJŚCIE GŁÓWNE",
+          title: "Recepcja (Pani Marzena), Lobby i Waga dla Pacjentów",
+          desc: "W naszej recepcji z dębowymi lamelami i głęboką leśną zielenią powita Państwa Pani Marzena. Przygotowaliśmy tu wygodne sofy, kącik wodny dla pupili oraz precyzyjną wagę weterynaryjną.",
+          factTitle: "WAGA DLA PODOPIECZNYCH",
+          factBody:
+            "Tuż przy recepcji znajduje się waga elektroniczna z wyświetlaczem LED — dokładny pomiar masy ciała gwarantuje bezpieczną dawkę płytkiej sedacji.",
+          img: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=900&q=80"
+        },
+        {
+          id: 1,
+          pos: { x: -12, z: 3.8 },
+          lookAt: { x: -14.2, z: 7.2 },
+          nav: "02. Dr Jaśkiewicz",
+          code: "STREFA 02 / 08 — KONSULTACJA ONKOLOGICZNA",
+          title: "Gabinet Lekarza Onkologa — dr Anna Jaśkiewicz",
+          desc: "W tym gabinecie spotka się z Państwem i Waszym pupilem dr Anna Jaśkiewicz, specjalizująca się w onkologii weterynaryjnej. Przy biurku i negatoskopach omawiamy plan leczenia.",
+          factTitle: "KONSYLIUM I KWALIFIKACJA",
+          factBody:
+            "Dr Anna Jaśkiewicz bada pacjenta przed cyklem naświetlań i codziennie kontroluje jego samopoczucie w trakcie pobytu w Ośrodku.",
+          img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80"
+        },
+        {
+          id: 2,
+          pos: { x: -4, z: -5.0 },
+          lookAt: { x: -4.2, z: -9.5 },
+          nav: "03. Zabiegowy (O₂)",
+          code: "STREFA 03 / 08 — ANESTEZJOLOG EMILIA SULIK",
+          title: "Gabinet Zabiegowy — Anestezjolog Emilia Sulik i Tlenoterapia",
+          desc: "Tutaj anestezjolog Emilia Sulik przygotowuje pacjentów do diagnostyki oraz sesji terapeutycznych. Wykonujemy tu badania krwi i dbamy o łagodne wybudzenie na miękkich posłaniach z tlenem.",
+          factTitle: "OPIEKA ANESTEZJOLOGICZNA I KONCENTRATOR O₂",
+          factBody:
+            "Anestezjolog Emilia Sulik dobiera ultralekką sedację wziewną i prowadzi tlenoterapię podczas szybkiego wybudzania zwierzaka.",
+          img: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?auto=format&fit=crop&w=900&q=80"
+        },
+        {
+          id: 3,
+          pos: { x: 4, z: -4.8 },
+          lookAt: { x: 4.2, z: -9.2 },
+          nav: "04. Tomograf TK",
+          code: "STREFA 04 / 08 — PLANOWANIE 3D",
+          title: "Pracownia Tomografii Komputerowej (TK)",
+          desc: "Własny tomograf wykonuje trójwymiarowe skany niezbędne do zaplanowania wiązki. Tworzymy tu również indywidualne materace próżniowe.",
+          factTitle: "PALETA DO PLANOWANIA RT (1:1)",
+          factBody:
+            "Na stole TK leży specjalna paleta RT. Identyczna paleta znajduje się na akceleratorze — dzięki temu układamy pacjenta z milimetrową precyzją.",
+          img: "https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/tomograf-scaled_light.jpg"
+        },
+        {
+          id: 4,
+          pos: { x: 3.8, z: 4.8 },
+          lookAt: { x: 3.8, z: 9.2 },
+          nav: "05. Sterownia (Paweł)",
+          code: "STREFA 05 / 08 — TECHNIK PAWEŁ I FIZYK MEDYCZNY",
+          title: "Sterownia Tomografu i Akceleratora — Technik Paweł",
+          desc: "Z tego pomieszczenia technik elektroradiologii Paweł wraz z fizykiem medycznym sterują tomografem oraz akceleratorem liniowym, konturując guz i narządy krytyczne na stacjach 3D.",
+          factTitle: "KAMERY HD I TELEMETRIA NA ŻYWO",
+          factBody:
+            "Przez potężne żelbetowe ściany bunkra nie można wstawić zwykłego okna — dlatego technik Paweł i anestezjolog Emilia Sulik obserwują pacjenta na żywo przez system kamer HD.",
+          img: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=900&q=80"
+        },
+        {
+          id: 5,
+          pos: { x: 10.5, z: 5.5 },
+          lookAt: { x: 10.5, z: -2 },
+          nav: "06. Labirynt",
+          code: "STREFA 06 / 08 — INŻYNIERIA RADIOLOGICZNA",
+          title: "Labirynt Bunkra — Po co nam labirynt?",
+          desc: "Stoisz w żelbetowym korytarzu prowadzącym do bunkra. Zwróć uwagę na załamanie muru przed Tobą — to kluczowy element ochrony radiologicznej.",
+          factTitle: "DLACZEGO KORYTARZ ZAKRĘCA?",
+          factBody:
+            "Promieniowanie rozproszone biegnie po liniach prostych i rozbija się o żelbetową ścianę labiryntu, dzięki czemu NIGDY nie trafia w drzwi wejściowe.",
+          img: "https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/akcelerator-scaled_light.jpg"
+        },
+        {
+          id: 6,
+          pos: { x: 14.5, z: -3.8 },
+          lookAt: { x: 15.2, z: -8.5 },
+          nav: "07. Akcelerator",
+          code: "STREFA 07 / 08 — SERCE INSTYTUTU RTWET",
+          title: "Bunkier Medycznego Akceleratora Liniowego",
+          desc: "Przed Tobą stoi medyczny akcelerator liniowy z obracającym się ramieniem (gantry 360°), ruchomym stołem terapeutycznym oraz stanowiskiem do sedacji wziewnej i monitoringu.",
+          factTitle: "WIĄZKA MEGAWOLTOWA W 10 MINUT",
+          factBody:
+            "Głowica obraca się wokół stołu, skupiając wiązkę dokładnie w guzie i oszczędzając zdrowe narządy. Po wyjściu z bunkra zwierzę nie promieniuje (0%).",
+          img: "https://radioterapiaweterynaryjna.pl/wp-content/uploads/2022/05/akcelerator-scaled_light.jpg"
+        },
+        {
+          id: 7,
+          pos: { x: -4.2, z: 5.0 },
+          lookAt: { x: -4.8, z: 9.8 },
+          nav: "08. Hotel",
+          code: "STREFA 08 / 08 — BAZA NOCLEGOWA DLA OPIEKUNÓW",
+          title: "Pokoje Hotelowe dla Opiekunów, Praca Zdalna i Ogród",
+          desc: "Dysponujemy przytulnymi pokojami z wygodnym łóżkiem, biurkiem do pracy zdalnej, przeszkloną szafą, miękkim legowiskiem dla psa i drapakiem dla kota oraz wyjściem do ogrodu.",
+          factTitle: "POBYT Z PUPILEM NA MIEJSCU",
+          factBody:
+            "Zamiast codziennie dojeżdżać lub zostawiać zwierzaka w szpitalnej klatce, mieszkasz ze swoim przyjacielem w cichym, domowym pokoju przy lesie.",
+          img: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=900&q=80"
+        }
+      ];
+
+      // ============================================================================
+      // 3. INITIALIZE THREE.JS SCENE, CAMERA & LIGHTING
+      // ============================================================================
+      const container = document.getElementById("webgl-container");
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1c1b19);
+      scene.fog = new THREE.FogExp2(0x1c1b19, 0.008);
+
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        140
+      );
+      const EYE_HEIGHT = 1.68;
+
+      const camPos = new THREE.Vector3(
+        WAYPOINTS[0].pos.x,
+        EYE_HEIGHT,
+        WAYPOINTS[0].pos.z
+      );
+      const targetCamPos = camPos.clone();
+      let yaw = 0;
+      let pitch = -0.05;
+      let targetYaw = 0;
+      let targetPitch = -0.05;
+      let walkBobTimer = 0;
+
+      // Orbit Camera State
+      const orbitCenter = new THREE.Vector3(0, 0, 0);
+      let orbitRadius = 26;
+      let orbitTheta = 0.25;
+      let orbitPhi = 0.88;
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: "high-performance"
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.06;
+      container.appendChild(renderer.domElement);
+
+      const hemiLight = new THREE.HemisphereLight(0xfff8ed, 0x3a3228, 0.54);
+      hemiLight.position.set(0, 15, 0);
+      scene.add(hemiLight);
+
+      const dirLight = new THREE.DirectionalLight(0xfff4e0, 0.68);
+      dirLight.position.set(-14, 24, -8);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 2048;
+      dirLight.shadow.mapSize.height = 2048;
+      dirLight.shadow.camera.near = 1;
+      dirLight.shadow.camera.far = 55;
+      dirLight.shadow.camera.left = -22;
+      dirLight.shadow.camera.right = 22;
+      dirLight.shadow.camera.top = 18;
+      dirLight.shadow.camera.bottom = -18;
+      dirLight.shadow.bias = -0.0005;
+      scene.add(dirLight);
+
+      const ceilingLightsGroup = new THREE.Group();
+      scene.add(ceilingLightsGroup);
+
+      function addCeilingLight(
+        x,
+        z,
+        color = 0xfff1d6,
+        intensity = 0.95,
+        distance = 15
+      ) {
+        const light = new THREE.PointLight(color, intensity, distance, 1.6);
+        light.position.set(x, 3.55, z);
+        scene.add(light);
+
+        const housing = new THREE.Mesh(
+          new THREE.BoxGeometry(1.45, 0.08, 0.48),
+          new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4 })
+        );
+        housing.position.set(x, 3.86, z);
+        ceilingLightsGroup.add(housing);
+
+        const diffuser = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.32, 0.36),
+          new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide })
+        );
+        diffuser.rotation.x = Math.PI / 2;
+        diffuser.position.set(x, 3.81, z);
+        ceilingLightsGroup.add(diffuser);
+      }
+
+      addCeilingLight(-12.5, -6.5, 0xffe8c2, 1.15, 16);
+      addCeilingLight(-12.5, 5.5, 0xfff0d4, 1.05, 15);
+      addCeilingLight(-4.0, -6.5, 0xf0f9ff, 1.1, 15);
+      addCeilingLight(4.2, -6.5, 0xdbeafe, 1.1, 15);
+      addCeilingLight(3.8, 6.5, 0xe0f2fe, 1.0, 15);
+      addCeilingLight(10.5, 3.5, 0xfde68a, 0.9, 14);
+      addCeilingLight(15.0, -6.0, 0xdbeafe, 1.25, 16);
+      addCeilingLight(-4.5, 7.0, 0xffe4b5, 1.15, 15);
+      addCeilingLight(-6.5, 0, 0xfff2db, 0.85, 14);
+      addCeilingLight(2.5, 0, 0xfff2db, 0.85, 14);
+
+      // ============================================================================
+      // 4. PROCEDURAL TEXTURES & ARCHITECTURAL MATERIALS
+      // ============================================================================
+      function createRichWoodFloorTexture() {
+        const c = document.createElement("canvas");
+        c.width = 512;
+        c.height = 512;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#8a6240";
+        ctx.fillRect(0, 0, 512, 512);
+
+        const plankH = 64;
+        const tones = ["#8f6642", "#7e5837", "#996f4a", "#845d3b"];
+        for (let y = 0; y < 512; y += plankH) {
+          const offset = (y / plankH) % 2 === 0 ? 0 : 128;
+          for (let x = -128; x < 512; x += 256) {
+            const tone = tones[(Math.abs(x) + y) % tones.length];
+            ctx.fillStyle = tone;
+            ctx.fillRect(x + offset, y, 254, plankH - 2);
+            ctx.fillStyle = "rgba(45, 25, 10, 0.14)";
+            ctx.fillRect(x + offset + 14, y + 16, 210, 3);
+            ctx.fillRect(x + offset + 40, y + 42, 175, 2);
+            ctx.strokeStyle = "#4d331e";
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x + offset, y, 256, plankH);
+          }
+        }
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(14, 10);
+        return tex;
+      }
+
+      function createSubtleWallTexture(baseHex, lineHex) {
+        const c = document.createElement("canvas");
+        c.width = 256;
+        c.height = 256;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = baseHex;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.strokeStyle = lineHex;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(0, 0, 256, 256);
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(3, 1);
+        return tex;
+      }
+
+      function createConcreteBunkerTexture() {
+        const c = document.createElement("canvas");
+        c.width = 256;
+        c.height = 256;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#6e7371";
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.strokeStyle = "#4a4e4c";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(3, 3, 250, 122);
+        ctx.strokeRect(3, 131, 250, 122);
+        ctx.fillStyle = "#363938";
+        [36, 220].forEach((x) => {
+          [64, 192].forEach((y) => {
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        });
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(4, 2);
+        return tex;
+      }
+
+      const floorMat = new THREE.MeshStandardMaterial({
+        map: createRichWoodFloorTexture(),
+        roughness: 0.42,
+        metalness: 0.05
+      });
+
+      const ceilingMat = new THREE.MeshStandardMaterial({
+        color: 0xe6e1d6,
+        roughness: 0.9
+      });
+
+      const WALL_MATERIALS = {
+        interior: new THREE.MeshStandardMaterial({
+          map: createSubtleWallTexture("#F2EFE9", "#E2DDD2"),
+          roughness: 0.75
+        }),
+        sage: new THREE.MeshStandardMaterial({
+          map: createSubtleWallTexture("#2E443B", "#23352E"),
+          roughness: 0.7
+        }),
+        navy: new THREE.MeshStandardMaterial({
+          map: createSubtleWallTexture("#273647", "#1D2936"),
+          roughness: 0.65
+        }),
+        hotel: new THREE.MeshStandardMaterial({
+          map: createSubtleWallTexture("#5A4638", "#48372B"),
+          roughness: 0.75
+        }),
+        bunker: new THREE.MeshStandardMaterial({
+          map: createConcreteBunkerTexture(),
+          roughness: 0.82,
+          metalness: 0.08
+        })
+      };
+
+      const trimDarkMat = new THREE.MeshStandardMaterial({
+        color: 0x22201e,
+        roughness: 0.5
+      });
+      const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xc5a67c,
+        roughness: 0.28,
+        metalness: 0.65
+      });
+      const chromeMat = new THREE.MeshStandardMaterial({
+        color: 0xd4d4d8,
+        roughness: 0.2,
+        metalness: 0.85
+      });
+      const woodOakMat = new THREE.MeshStandardMaterial({
+        color: 0xc2925e,
+        roughness: 0.42
+      });
+      const darkWalnutMat = new THREE.MeshStandardMaterial({
+        color: 0x47301d,
+        roughness: 0.48
+      });
+      const medicalWhiteMat = new THREE.MeshStandardMaterial({
+        color: 0xfafaf9,
+        roughness: 0.22,
+        metalness: 0.1
+      });
+      const glassMat = new THREE.MeshStandardMaterial({
+        color: 0xbae6fd,
+        transparent: true,
+        opacity: 0.32,
+        roughness: 0.1,
+        metalness: 0.2
+      });
+      const couchDarkMat = new THREE.MeshStandardMaterial({
+        color: 0x1e242b,
+        roughness: 0.4
+      });
+      const sofaCognacMat = new THREE.MeshStandardMaterial({
+        color: 0xb8653b,
+        roughness: 0.65
+      });
+      const terracottaMat = new THREE.MeshStandardMaterial({
+        color: 0xc85a3c,
+        roughness: 0.6
+      });
+      const plantGreenMat = new THREE.MeshStandardMaterial({
+        color: 0x24633b,
+        roughness: 0.5
+      });
+
+      // Floor & Ceiling
+      const floorGeo = new THREE.PlaneGeometry(42, 30);
+      const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+      floorMesh.rotation.x = -Math.PI / 2;
+      floorMesh.receiveShadow = true;
+      scene.add(floorMesh);
+
+      const ceilingMesh = new THREE.Mesh(floorGeo, ceilingMat);
+      ceilingMesh.rotation.x = Math.PI / 2;
+      ceilingMesh.position.y = 3.9;
+      scene.add(ceilingMesh);
+
+      // ============================================================================
+      // 5. CLINIC ARCHITECTURAL LAYOUT & DETAILED PREFAB BUILDERS
+      // ============================================================================
+      const CLINIC_WORLD = {
+        walls: [
+          // Ściany zewnętrzne
+          { x1: -17, z1: -12, x2: -8, z2: -12, style: "sage", thickness: 0.26 },
+          { x1: -8, z1: -12, x2: 8.5, z2: -12, style: "navy", thickness: 0.26 },
+          {
+            x1: 8.5,
+            z1: -12,
+            x2: 19,
+            z2: -12,
+            style: "bunker",
+            thickness: 0.8
+          },
+          { x1: -17, z1: 12, x2: -8, z2: 12, style: "sage", thickness: 0.26 },
+          { x1: -8, z1: 12, x2: 0, z2: 12, style: "hotel", thickness: 0.26 },
+          { x1: 0, z1: 12, x2: 8.5, z2: 12, style: "navy", thickness: 0.26 },
+          { x1: 8.5, z1: 12, x2: 19, z2: 12, style: "bunker", thickness: 0.4 },
+          { x1: -17, z1: -12, x2: -17, z2: 12, style: "sage", thickness: 0.26 },
+          { x1: 19, z1: -12, x2: 19, z2: 12, style: "bunker", thickness: 0.9 },
+
+          // Ściany wewnętrzne działowe
+          {
+            x1: -8,
+            z1: -12,
+            x2: -8,
+            z2: -2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+          {
+            x1: -8,
+            z1: 2.2,
+            x2: -8,
+            z2: 12,
+            style: "interior",
+            thickness: 0.24
+          },
+          {
+            x1: -17,
+            z1: 1.5,
+            x2: -13.5,
+            z2: 1.5,
+            style: "interior",
+            thickness: 0.24
+          },
+          {
+            x1: -10.5,
+            z1: 1.5,
+            x2: -8,
+            z2: 1.5,
+            style: "interior",
+            thickness: 0.24
+          },
+
+          // Zabiegowy (O2)
+          {
+            x1: 0,
+            z1: -12,
+            x2: 0,
+            z2: -2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+          {
+            x1: -8,
+            z1: -2.2,
+            x2: -5.2,
+            z2: -2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+          {
+            x1: -2.5,
+            z1: -2.2,
+            x2: 0,
+            z2: -2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+
+          // Pracownia Tomografii TK
+          {
+            x1: 8.5,
+            z1: -12,
+            x2: 8.5,
+            z2: -2.2,
+            style: "bunker",
+            thickness: 0.48
+          },
+          {
+            x1: 0,
+            z1: -2.2,
+            x2: 2.6,
+            z2: -2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+          {
+            x1: 5.4,
+            z1: -2.2,
+            x2: 8.5,
+            z2: -2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+
+          // Skrzydło Hotelowe
+          { x1: 0, z1: 2.2, x2: 0, z2: 12, style: "interior", thickness: 0.24 },
+          {
+            x1: -8,
+            z1: 2.2,
+            x2: -5.5,
+            z2: 2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+          {
+            x1: -3.0,
+            z1: 2.2,
+            x2: 0,
+            z2: 2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+
+          // Sterownia
+          {
+            x1: 8.5,
+            z1: 2.2,
+            x2: 8.5,
+            z2: 12,
+            style: "bunker",
+            thickness: 0.7
+          },
+          {
+            x1: 0,
+            z1: 2.2,
+            x2: 2.2,
+            z2: 2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+          {
+            x1: 4.8,
+            z1: 2.2,
+            x2: 8.5,
+            z2: 2.2,
+            style: "interior",
+            thickness: 0.24
+          },
+
+          // Labirynt i Bunkier Akceleratora
+          {
+            x1: 12.2,
+            z1: -4.5,
+            x2: 12.2,
+            z2: 7.5,
+            style: "bunker",
+            thickness: 1.15
+          },
+          {
+            x1: 8.5,
+            z1: 9.5,
+            x2: 19,
+            z2: 9.5,
+            style: "bunker",
+            thickness: 0.8
+          }
+        ],
+        objects: [
+          // Portale drzwiowe
+          { type: "door_portal", x: -12.0, z: 1.5, rotY: 0 },
+          { type: "door_portal", x: -3.85, z: -2.2, rotY: 0 },
+          { type: "door_portal", x: 4.0, z: -2.2, rotY: 0 },
+          { type: "door_portal", x: -4.25, z: 2.2, rotY: 0 },
+          { type: "door_portal", x: 3.5, z: 2.2, rotY: 0 },
+
+          // Lamele ścienne
+          { type: "wood_slats", x: -12.5, z: -11.8, rotY: 0 },
+          { type: "wood_slats", x: -7.8, z: 9.5, rotY: Math.PI / 2 },
+
+          // Strefa 01: Recepcja i Lobby (Pani Marzena)
+          { type: "reception_desk", x: -12.5, z: -9.8, rotY: 0 },
+          { type: "staff_marzena", x: -12.5, z: -10.6, rotY: 0 },
+          { type: "vet_scale", x: -9.4, z: -9.8, rotY: 0 },
+          { type: "sofa_cognac", x: -15.4, z: -5.2, rotY: Math.PI / 2 },
+          { type: "coffee_table", x: -13.7, z: -5.2, rotY: 0 },
+          { type: "water_bowls", x: -9.2, z: -3.6, rotY: 0 },
+          { type: "potted_plant", x: -16.0, z: -10.8, rotY: 0 },
+          { type: "potted_plant", x: -8.8, z: -10.8, rotY: 0 },
+          { type: "potted_plant", x: -16.0, z: -2.2, rotY: 0 },
+
+          // Strefa 02: Gabinet Onkologa (dr Anna Jaśkiewicz)
+          { type: "exam_table", x: -14.2, z: 6.2, rotY: 0 },
+          { type: "staff_dr_anna", x: -14.2, z: 7.4, rotY: Math.PI },
+          { type: "doctor_desk", x: -10.5, z: 9.2, rotY: 0 },
+          { type: "glass_cabinet", x: -16.3, z: 9.2, rotY: Math.PI / 2 },
+          { type: "negatoscope_wall", x: -13.8, z: 11.8, rotY: Math.PI },
+          { type: "potted_plant", x: -8.8, z: 10.8, rotY: 0 },
+
+          // Strefa 03: Gabinet Zabiegowy, Lab i O2 (Anestezjolog Emilia Sulik)
+          { type: "exam_table", x: -4.5, z: -8.5, rotY: 0 },
+          { type: "staff_emilia", x: -3.3, z: -8.6, rotY: -0.45 },
+          { type: "o2_concentrator", x: -2.2, z: -9.2, rotY: 0 },
+          { type: "lab_station", x: -5.5, z: -11.2, rotY: 0 },
+          { type: "recovery_bed", x: -1.4, z: -6.5, rotY: 0 },
+          { type: "recovery_bed", x: -1.4, z: -4.8, rotY: 0 },
+
+          // Strefa 04: Tomograf TK
+          { type: "ct_scanner", x: 4.2, z: -8.6, rotY: 0 },
+          { type: "vac_mattress_rack", x: 0.7, z: -9.2, rotY: Math.PI / 2 },
+
+          // Strefa 05: Sterownia (Technik Paweł)
+          { type: "control_console", x: 3.8, z: 9.0, rotY: 0 },
+          { type: "staff_pawel", x: 3.8, z: 7.6, rotY: 0 },
+          { type: "potted_plant", x: 0.8, z: 10.8, rotY: 0 },
+
+          // Strefa 07: Bunkier Akceleratora
+          { type: "linac_vault", x: 15.2, z: -8.2, rotY: 0 },
+          { type: "anesthesia_cart", x: 17.5, z: -6.8, rotY: -0.5 },
+
+          // Strefa 08: Pokój Hotelowy
+          { type: "hotel_bed", x: -5.5, z: 9.5, rotY: Math.PI / 2 },
+          { type: "remote_desk", x: -1.6, z: 10.6, rotY: 0 },
+          { type: "hotel_wardrobe", x: -0.7, z: 5.5, rotY: -Math.PI / 2 },
+          { type: "pet_bed_sleeping", x: -3.2, z: 9.2, rotY: 0 },
+          { type: "cat_tree", x: -1.3, z: 7.8, rotY: 0 },
+          { type: "potted_plant", x: -7.2, z: 4.2, rotY: 0 }
+        ]
+      };
+
+      const worldRootGroup = new THREE.Group();
+      scene.add(worldRootGroup);
+
+      let linacGantryGroup = null;
+      let ctLaserRing = null;
+
+      function createWallSegment(wallData) {
+        const {
+          x1,
+          z1,
+          x2,
+          z2,
+          style = "interior",
+          thickness = 0.24
+        } = wallData;
+        const height = 3.9;
+        const dx = x2 - x1;
+        const dz = z2 - z1;
+        const len = Math.hypot(dx, dz);
+        if (len < 0.1) return null;
+
+        const angle = -Math.atan2(dz, dx);
+        const cx = (x1 + x2) / 2;
+        const cz = (z1 + z2) / 2;
+
+        const group = new THREE.Group();
+        group.position.set(cx, 0, cz);
+        group.rotation.y = angle;
+
+        const mat = WALL_MATERIALS[style] || WALL_MATERIALS.interior;
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(len, height, thickness),
+          mat
+        );
+        mesh.position.y = height / 2;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        group.add(mesh);
+
+        const baseMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(len + 0.02, 0.14, thickness + 0.04),
+          trimDarkMat
+        );
+        baseMesh.position.y = 0.07;
+        group.add(baseMesh);
+
+        const crownMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(len + 0.02, 0.1, thickness + 0.04),
+          trimDarkMat
+        );
+        crownMesh.position.y = height - 0.05;
+        group.add(crownMesh);
+
+        return group;
+      }
+
+      // Reusable Human Character Builder with distinct hair styles
+      function buildHumanCharacter({
+        coatColor,
+        scrubColor,
+        hairColor,
+        hairStyle = "bun", // 'bun' | 'shoulder_blonde' | 'curly' | 'short_male'
+        hasStethoscope = false,
+        hasGlasses = false,
+        hasClipboard = false
+      }) {
+        const g = new THREE.Group();
+        const skinMat = new THREE.MeshStandardMaterial({
+          color: 0xf1c27d,
+          roughness: 0.6
+        });
+        const coatMat = new THREE.MeshStandardMaterial({
+          color: coatColor,
+          roughness: 0.45
+        });
+        const innerMat = new THREE.MeshStandardMaterial({
+          color: scrubColor,
+          roughness: 0.5
+        });
+        const hairMat = new THREE.MeshStandardMaterial({
+          color: hairColor,
+          roughness: 0.65
+        });
+
+        // Legs
+        [-0.1, 0.1].forEach((lx) => {
+          const leg = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.065, 0.055, 0.78, 12),
+            trimDarkMat
+          );
+          leg.position.set(lx, 0.39, 0);
+          leg.castShadow = true;
+          g.add(leg);
+        });
+
+        // Torso
+        const torso = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.19, 0.17, 0.68, 16),
+          coatMat
+        );
+        torso.position.y = 1.1;
+        torso.castShadow = true;
+        g.add(torso);
+
+        // V-neck inner scrub / blouse
+        const vNeck = new THREE.Mesh(
+          new THREE.BoxGeometry(0.14, 0.28, 0.22),
+          innerMat
+        );
+        vNeck.position.set(0, 1.25, 0.09);
+        g.add(vNeck);
+
+        // Arms
+        [-0.23, 0.23].forEach((ax, idx) => {
+          const arm = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.05, 0.045, 0.58, 12),
+            coatMat
+          );
+          arm.position.set(ax, 1.08, 0.04);
+          arm.rotation.z = ax > 0 ? -0.12 : 0.12;
+          arm.rotation.x = idx === 1 && hasClipboard ? -0.45 : -0.15;
+          g.add(arm);
+
+          const hand = new THREE.Mesh(
+            new THREE.SphereGeometry(0.045, 10, 10),
+            skinMat
+          );
+          hand.position.set(
+            ax * 1.08,
+            idx === 1 && hasClipboard ? 0.92 : 0.8,
+            idx === 1 && hasClipboard ? 0.22 : 0.1
+          );
+          g.add(hand);
+        });
+
+        // Optional clipboard (for Anesthesiologist Emilia Sulik)
+        if (hasClipboard) {
+          const board = new THREE.Mesh(
+            new THREE.BoxGeometry(0.22, 0.3, 0.02),
+            woodOakMat
+          );
+          board.position.set(0.24, 0.96, 0.28);
+          board.rotation.x = -0.5;
+          board.rotation.y = -0.2;
+          g.add(board);
+
+          const sheet = new THREE.Mesh(
+            new THREE.BoxGeometry(0.19, 0.26, 0.024),
+            medicalWhiteMat
+          );
+          sheet.position.copy(board.position);
+          sheet.rotation.copy(board.rotation);
+          g.add(sheet);
+        }
+
+        // Head
+        const head = new THREE.Mesh(
+          new THREE.SphereGeometry(0.145, 18, 16),
+          skinMat
+        );
+        head.position.y = 1.58;
+        head.castShadow = true;
+        g.add(head);
+
+        // Eyes
+        [-0.048, 0.048].forEach((ex) => {
+          const eye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.016, 8, 8),
+            trimDarkMat
+          );
+          eye.position.set(ex, 1.59, 0.13);
+          g.add(eye);
+        });
+
+        // Optional Glasses (for Technician Paweł)
+        if (hasGlasses) {
+          [-0.052, 0.052].forEach((gx) => {
+            const rim = new THREE.Mesh(
+              new THREE.TorusGeometry(0.028, 0.004, 8, 16),
+              trimDarkMat
+            );
+            rim.position.set(gx, 1.59, 0.142);
+            g.add(rim);
+          });
+        }
+
+        // Hair styles
+        if (hairStyle === "shoulder_blonde") {
+          // Dr Anna Jaśkiewicz: blond włosy do ramion
+          const topCap = new THREE.Mesh(
+            new THREE.SphereGeometry(
+              0.156,
+              18,
+              14,
+              0,
+              Math.PI * 2,
+              0,
+              Math.PI * 0.62
+            ),
+            hairMat
+          );
+          topCap.position.y = 1.59;
+          g.add(topCap);
+
+          [-0.125, 0.125].forEach((hx) => {
+            const sideLock = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.048, 0.058, 0.28, 12),
+              hairMat
+            );
+            sideLock.position.set(hx, 1.48, 0.01);
+            sideLock.rotation.z = hx > 0 ? -0.1 : 0.1;
+            sideLock.castShadow = true;
+            g.add(sideLock);
+          });
+
+          const backHair = new THREE.Mesh(
+            new THREE.BoxGeometry(0.28, 0.27, 0.1),
+            hairMat
+          );
+          backHair.position.set(0, 1.48, -0.09);
+          backHair.castShadow = true;
+          g.add(backHair);
+        } else if (hairStyle === "curly") {
+          // Anestezjolog Emilia Sulik: bujne kręcone włosy z lokami wokół głowy i ramion
+          const curlOffsets = [
+            [0, 1.71, 0, 0.075],
+            [-0.09, 1.69, 0.04, 0.068],
+            [0.09, 1.69, 0.04, 0.068],
+            [-0.13, 1.62, 0.02, 0.072],
+            [0.13, 1.62, 0.02, 0.072],
+            [-0.15, 1.53, 0.03, 0.068],
+            [0.15, 1.53, 0.03, 0.068],
+            [-0.14, 1.45, 0.02, 0.062],
+            [0.14, 1.45, 0.02, 0.062],
+            [0, 1.65, -0.11, 0.08],
+            [-0.09, 1.56, -0.11, 0.075],
+            [0.09, 1.56, -0.11, 0.075],
+            [0, 1.47, -0.12, 0.072],
+            [-0.06, 1.72, -0.05, 0.068],
+            [0.06, 1.72, -0.05, 0.068]
+          ];
+          curlOffsets.forEach(([cx, cy, cz, r]) => {
+            const curl = new THREE.Mesh(
+              new THREE.SphereGeometry(r, 12, 12),
+              hairMat
+            );
+            curl.position.set(cx, cy, cz);
+            curl.castShadow = true;
+            g.add(curl);
+          });
+        } else if (hairStyle === "short_male") {
+          // Technik Paweł: krótka męska fryzura z przedziałkiem
+          const hairCap = new THREE.Mesh(
+            new THREE.SphereGeometry(
+              0.152,
+              16,
+              12,
+              0,
+              Math.PI * 2,
+              0,
+              Math.PI * 0.52
+            ),
+            hairMat
+          );
+          hairCap.position.y = 1.6;
+          g.add(hairCap);
+
+          const frontQuiff = new THREE.Mesh(
+            new THREE.BoxGeometry(0.18, 0.055, 0.08),
+            hairMat
+          );
+          frontQuiff.position.set(0, 1.7, 0.09);
+          frontQuiff.rotation.x = -0.2;
+          g.add(frontQuiff);
+        } else {
+          // Pani Marzena: elegancki kok
+          const hairCap = new THREE.Mesh(
+            new THREE.SphereGeometry(
+              0.152,
+              16,
+              12,
+              0,
+              Math.PI * 2,
+              0,
+              Math.PI * 0.55
+            ),
+            hairMat
+          );
+          hairCap.position.y = 1.6;
+          g.add(hairCap);
+
+          const bun = new THREE.Mesh(
+            new THREE.SphereGeometry(0.065, 12, 12),
+            hairMat
+          );
+          bun.position.set(0, 1.64, -0.15);
+          g.add(bun);
+        }
+
+        if (hasStethoscope) {
+          const steth = new THREE.Mesh(
+            new THREE.TorusGeometry(0.13, 0.015, 8, 24),
+            chromeMat
+          );
+          steth.rotation.x = Math.PI / 2 + 0.35;
+          steth.position.set(0, 1.38, 0.03);
+          g.add(steth);
+        }
+
+        return g;
+      }
+
+      function createPrefabMesh(objData) {
+        const { type, x, z, rotY = 0 } = objData;
+        const g = new THREE.Group();
+        g.position.set(x, 0, z);
+        g.rotation.y = rotY;
+
+        switch (type) {
+          case "door_portal": {
+            const gapW = 2.7;
+            const doorH = 2.45;
+            const topH = 3.9 - doorH;
+            const wallT = 0.26;
+
+            const header = new THREE.Mesh(
+              new THREE.BoxGeometry(gapW, topH, wallT),
+              WALL_MATERIALS.interior
+            );
+            header.position.y = doorH + topH / 2;
+            g.add(header);
+
+            const jambL = new THREE.Mesh(
+              new THREE.BoxGeometry(0.12, doorH, wallT + 0.06),
+              darkWalnutMat
+            );
+            jambL.position.set(-gapW / 2 + 0.06, doorH / 2, 0);
+            g.add(jambL);
+
+            const jambR = jambL.clone();
+            jambR.position.x = gapW / 2 - 0.06;
+            g.add(jambR);
+
+            const lintel = new THREE.Mesh(
+              new THREE.BoxGeometry(gapW + 0.04, 0.12, wallT + 0.08),
+              darkWalnutMat
+            );
+            lintel.position.y = doorH - 0.04;
+            g.add(lintel);
+            break;
+          }
+
+          case "wood_slats": {
+            const width = 3.8;
+            const backing = new THREE.Mesh(
+              new THREE.BoxGeometry(width, 3.65, 0.04),
+              trimDarkMat
+            );
+            backing.position.y = 1.92;
+            g.add(backing);
+            const numSlats = Math.floor(width / 0.14);
+            const startX = -width / 2 + 0.08;
+            for (let i = 0; i < numSlats; i++) {
+              const slat = new THREE.Mesh(
+                new THREE.BoxGeometry(0.055, 3.65, 0.07),
+                woodOakMat
+              );
+              slat.position.set(startX + i * 0.14, 1.92, 0.03);
+              g.add(slat);
+            }
+            break;
+          }
+
+          case "reception_desk": {
+            const body = new THREE.Mesh(
+              new THREE.BoxGeometry(3.5, 1.0, 0.88),
+              darkWalnutMat
+            );
+            body.position.y = 0.5;
+            body.castShadow = true;
+            g.add(body);
+
+            const brassFront = new THREE.Mesh(
+              new THREE.BoxGeometry(3.2, 0.72, 0.05),
+              brassMat
+            );
+            brassFront.position.set(0, 0.5, 0.44);
+            g.add(brassFront);
+
+            const top = new THREE.Mesh(
+              new THREE.BoxGeometry(3.66, 0.08, 0.98),
+              medicalWhiteMat
+            );
+            top.position.y = 1.04;
+            g.add(top);
+
+            const mon = new THREE.Mesh(
+              new THREE.BoxGeometry(0.62, 0.38, 0.04),
+              trimDarkMat
+            );
+            mon.position.set(0.5, 1.32, 0.1);
+            g.add(mon);
+
+            const lamp = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.12, 0.18, 0.35, 16),
+              new THREE.MeshStandardMaterial({
+                color: 0xffedd5,
+                emissive: 0xf59e0b,
+                emissiveIntensity: 0.8
+              })
+            );
+            lamp.position.set(-1.1, 1.28, 0.1);
+            g.add(lamp);
+            break;
+          }
+
+          case "vet_scale": {
+            const pad = new THREE.Mesh(
+              new THREE.BoxGeometry(1.18, 0.07, 0.78),
+              chromeMat
+            );
+            pad.position.y = 0.035;
+            pad.castShadow = true;
+            g.add(pad);
+
+            const matTop = new THREE.Mesh(
+              new THREE.BoxGeometry(1.1, 0.02, 0.7),
+              couchDarkMat
+            );
+            matTop.position.y = 0.075;
+            g.add(matTop);
+
+            const post = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.03, 0.03, 1.05, 12),
+              chromeMat
+            );
+            post.position.set(0, 0.52, -0.36);
+            g.add(post);
+
+            const head = new THREE.Mesh(
+              new THREE.BoxGeometry(0.36, 0.18, 0.08),
+              trimDarkMat
+            );
+            head.position.set(0, 1.08, -0.34);
+            g.add(head);
+
+            const led = new THREE.Mesh(
+              new THREE.PlaneGeometry(0.28, 0.1),
+              new THREE.MeshBasicMaterial({ color: 0x10b981 })
+            );
+            led.position.set(0, 1.08, -0.295);
+            g.add(led);
+            break;
+          }
+
+          case "sofa_cognac": {
+            const frame = new THREE.Mesh(
+              new THREE.BoxGeometry(2.36, 0.14, 0.94),
+              darkWalnutMat
+            );
+            frame.position.y = 0.12;
+            g.add(frame);
+
+            const seat = new THREE.Mesh(
+              new THREE.BoxGeometry(2.3, 0.32, 0.9),
+              sofaCognacMat
+            );
+            seat.position.y = 0.32;
+            seat.castShadow = true;
+            g.add(seat);
+
+            const back = new THREE.Mesh(
+              new THREE.BoxGeometry(2.3, 0.55, 0.24),
+              sofaCognacMat
+            );
+            back.position.set(0, 0.7, -0.33);
+            back.castShadow = true;
+            g.add(back);
+
+            [-1.05, 1.05].forEach((ax) => {
+              const arm = new THREE.Mesh(
+                new THREE.BoxGeometry(0.24, 0.48, 0.92),
+                sofaCognacMat
+              );
+              arm.position.set(ax, 0.52, 0);
+              g.add(arm);
+            });
+
+            const rug = new THREE.Mesh(
+              new THREE.BoxGeometry(2.8, 0.015, 2.2),
+              new THREE.MeshStandardMaterial({
+                color: 0xe6e0d4,
+                roughness: 0.9
+              })
+            );
+            rug.position.set(0, 0.01, 0.8);
+            g.add(rug);
+            break;
+          }
+
+          case "coffee_table": {
+            const top = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.55, 0.55, 0.06, 24),
+              darkWalnutMat
+            );
+            top.position.y = 0.42;
+            top.castShadow = true;
+            g.add(top);
+
+            const base = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.32, 0.38, 0.4, 20),
+              brassMat
+            );
+            base.position.y = 0.2;
+            g.add(base);
+            break;
+          }
+
+          case "water_bowls": {
+            const tray = new THREE.Mesh(
+              new THREE.BoxGeometry(0.68, 0.02, 0.38),
+              darkWalnutMat
+            );
+            tray.position.y = 0.01;
+            g.add(tray);
+
+            [-0.16, 0.16].forEach((ox, i) => {
+              const bowl = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.11, 0.09, 0.08, 20),
+                chromeMat
+              );
+              bowl.position.set(ox, 0.05, 0);
+              g.add(bowl);
+
+              const water = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.095, 0.095, 0.02, 16),
+                new THREE.MeshBasicMaterial({
+                  color: i === 0 ? 0x38bdf8 : 0x7c4a24
+                })
+              );
+              water.position.set(ox, 0.085, 0);
+              g.add(water);
+            });
+            break;
+          }
+
+          case "exam_table": {
+            const ped = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.28, 0.36, 0.82, 20),
+              chromeMat
+            );
+            ped.position.y = 0.41;
+            ped.castShadow = true;
+            g.add(ped);
+
+            const top = new THREE.Mesh(
+              new THREE.BoxGeometry(1.75, 0.08, 0.85),
+              medicalWhiteMat
+            );
+            top.position.y = 0.84;
+            top.castShadow = true;
+            g.add(top);
+
+            const pad = new THREE.Mesh(
+              new THREE.BoxGeometry(1.65, 0.04, 0.76),
+              new THREE.MeshStandardMaterial({
+                color: 0x2e443b,
+                roughness: 0.5
+              })
+            );
+            pad.position.y = 0.89;
+            g.add(pad);
+            break;
+          }
+
+          case "doctor_desk": {
+            const desk = new THREE.Mesh(
+              new THREE.BoxGeometry(1.9, 0.76, 0.85),
+              darkWalnutMat
+            );
+            desk.position.y = 0.38;
+            desk.castShadow = true;
+            g.add(desk);
+
+            const laptop = new THREE.Mesh(
+              new THREE.BoxGeometry(0.45, 0.3, 0.03),
+              new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+            );
+            laptop.position.set(0, 0.92, 0.1);
+            g.add(laptop);
+
+            const chair = new THREE.Mesh(
+              new THREE.BoxGeometry(0.55, 0.85, 0.55),
+              couchDarkMat
+            );
+            chair.position.set(0, 0.425, 0.85);
+            g.add(chair);
+            break;
+          }
+
+          case "glass_cabinet": {
+            const frame = new THREE.Mesh(
+              new THREE.BoxGeometry(1.6, 2.1, 0.48),
+              medicalWhiteMat
+            );
+            frame.position.y = 1.15;
+            frame.castShadow = true;
+            g.add(frame);
+
+            const cavity = new THREE.Mesh(
+              new THREE.BoxGeometry(1.44, 1.5, 0.12),
+              couchDarkMat
+            );
+            cavity.position.set(0, 1.32, 0.19);
+            g.add(cavity);
+
+            [0.85, 1.25, 1.65].forEach((sy) => {
+              const shelf = new THREE.Mesh(
+                new THREE.BoxGeometry(1.4, 0.03, 0.16),
+                glassMat
+              );
+              shelf.position.set(0, sy, 0.2);
+              g.add(shelf);
+
+              [-0.45, -0.15, 0.2, 0.48].forEach((bx, idx) => {
+                const bottle = new THREE.Mesh(
+                  new THREE.CylinderGeometry(0.04, 0.04, 0.18, 10),
+                  new THREE.MeshStandardMaterial({
+                    color: idx % 2 === 0 ? 0x38bdf8 : 0x10b981
+                  })
+                );
+                bottle.position.set(bx, sy + 0.1, 0.2);
+                g.add(bottle);
+              });
+            });
+
+            const glassFront = new THREE.Mesh(
+              new THREE.BoxGeometry(1.46, 1.52, 0.02),
+              glassMat
+            );
+            glassFront.position.set(0, 1.32, 0.25);
+            g.add(glassFront);
+
+            [-0.08, 0.08].forEach((hx) => {
+              const handle = new THREE.Mesh(
+                new THREE.BoxGeometry(0.02, 0.28, 0.04),
+                brassMat
+              );
+              handle.position.set(hx, 1.2, 0.27);
+              g.add(handle);
+            });
+            break;
+          }
+
+          case "negatoscope_wall": {
+            [-0.7, 0.7].forEach((nx) => {
+              const casing = new THREE.Mesh(
+                new THREE.BoxGeometry(1.12, 0.82, 0.06),
+                trimDarkMat
+              );
+              casing.position.set(nx, 2.05, 0);
+              g.add(casing);
+
+              const screen = new THREE.Mesh(
+                new THREE.BoxGeometry(1.02, 0.72, 0.07),
+                new THREE.MeshBasicMaterial({ color: 0xe0f2fe })
+              );
+              screen.position.set(nx, 2.05, 0);
+              g.add(screen);
+            });
+            break;
+          }
+
+          case "o2_concentrator": {
+            const body = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.32, 0.32, 1.08, 24),
+              new THREE.MeshStandardMaterial({
+                color: 0x0284c7,
+                roughness: 0.3
+              })
+            );
+            body.position.y = 0.54;
+            body.castShadow = true;
+            g.add(body);
+
+            const top = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.33, 0.33, 0.12, 24),
+              trimDarkMat
+            );
+            top.position.y = 1.1;
+            g.add(top);
+
+            const humid = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.07, 0.07, 0.24, 16),
+              new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+            );
+            humid.position.set(0, 0.85, 0.32);
+            g.add(humid);
+            break;
+          }
+
+          case "lab_station": {
+            const base = new THREE.Mesh(
+              new THREE.BoxGeometry(3.2, 0.88, 0.72),
+              medicalWhiteMat
+            );
+            base.position.y = 0.44;
+            base.castShadow = true;
+            g.add(base);
+
+            const top = new THREE.Mesh(
+              new THREE.BoxGeometry(3.28, 0.06, 0.76),
+              trimDarkMat
+            );
+            top.position.y = 0.91;
+            g.add(top);
+
+            const analyzer = new THREE.Mesh(
+              new THREE.BoxGeometry(0.55, 0.45, 0.45),
+              new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+            );
+            analyzer.position.set(-0.8, 1.16, 0);
+            g.add(analyzer);
+
+            const centrifuge = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.22, 0.25, 0.32, 18),
+              medicalWhiteMat
+            );
+            centrifuge.position.set(0.5, 1.1, 0);
+            g.add(centrifuge);
+            break;
+          }
+
+          case "recovery_bed": {
+            const mat = new THREE.Mesh(
+              new THREE.BoxGeometry(1.25, 0.14, 0.9),
+              new THREE.MeshStandardMaterial({
+                color: 0x10b981,
+                roughness: 0.65
+              })
+            );
+            mat.position.y = 0.07;
+            mat.castShadow = true;
+            g.add(mat);
+
+            const bolster = new THREE.Mesh(
+              new THREE.BoxGeometry(1.25, 0.22, 0.18),
+              new THREE.MeshStandardMaterial({
+                color: 0x059669,
+                roughness: 0.7
+              })
+            );
+            bolster.position.set(0, 0.11, -0.36);
+            g.add(bolster);
+            break;
+          }
+
+          case "ct_scanner": {
+            const ring = new THREE.Mesh(
+              new THREE.TorusGeometry(1.25, 0.38, 24, 48),
+              medicalWhiteMat
+            );
+            ring.position.y = 1.35;
+            ring.castShadow = true;
+            g.add(ring);
+
+            const laser = new THREE.Mesh(
+              new THREE.TorusGeometry(0.92, 0.025, 16, 48),
+              new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+            );
+            laser.position.set(0, 1.35, 0.2);
+            ctLaserRing = laser;
+            g.add(laser);
+
+            const couch = new THREE.Mesh(
+              new THREE.BoxGeometry(0.65, 0.75, 2.8),
+              couchDarkMat
+            );
+            couch.position.set(0, 0.375, 1.5);
+            couch.castShadow = true;
+            g.add(couch);
+
+            const pallet = new THREE.Mesh(
+              new THREE.BoxGeometry(0.58, 0.08, 2.2),
+              brassMat
+            );
+            pallet.position.set(0, 0.8, 1.1);
+            g.add(pallet);
+            break;
+          }
+
+          case "vac_mattress_rack": {
+            [-0.65, 0.65].forEach((px) => {
+              const post = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.035, 0.035, 1.85, 12),
+                chromeMat
+              );
+              post.position.set(px, 0.925, 0);
+              g.add(post);
+            });
+
+            [0.45, 0.95, 1.45].forEach((sy, idx) => {
+              const bar = new THREE.Mesh(
+                new THREE.BoxGeometry(1.4, 0.04, 0.55),
+                darkWalnutMat
+              );
+              bar.position.set(0, sy, 0);
+              g.add(bar);
+
+              const cushion = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.16, 0.16, 1.15, 16),
+                new THREE.MeshStandardMaterial({
+                  color: idx === 1 ? 0x0284c7 : 0x2563eb,
+                  roughness: 0.5
+                })
+              );
+              cushion.rotation.z = Math.PI / 2;
+              cushion.position.set(0, sy + 0.18, 0);
+              g.add(cushion);
+            });
+            break;
+          }
+
+          case "control_console": {
+            const desk = new THREE.Mesh(
+              new THREE.BoxGeometry(4.2, 0.82, 0.95),
+              darkWalnutMat
+            );
+            desk.position.y = 0.41;
+            desk.castShadow = true;
+            g.add(desk);
+
+            [-1.2, 0, 1.2].forEach((ox, idx) => {
+              const bezel = new THREE.Mesh(
+                new THREE.BoxGeometry(0.96, 0.6, 0.04),
+                trimDarkMat
+              );
+              bezel.position.set(ox, 1.16, -0.18);
+              g.add(bezel);
+
+              const mon = new THREE.Mesh(
+                new THREE.BoxGeometry(0.88, 0.52, 0.05),
+                new THREE.MeshBasicMaterial({
+                  color: idx === 1 ? 0x10b981 : 0x38bdf8
+                })
+              );
+              mon.position.set(ox, 1.16, -0.2);
+              g.add(mon);
+            });
+            break;
+          }
+
+          case "linac_vault": {
+            const stand = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.85, 0.95, 2.6, 32),
+              medicalWhiteMat
+            );
+            stand.rotation.x = Math.PI / 2;
+            stand.position.set(0, 1.45, -1.5);
+            stand.castShadow = true;
+            g.add(stand);
+
+            const gantryGrp = new THREE.Group();
+            gantryGrp.position.set(0, 1.45, -0.3);
+            linacGantryGroup = gantryGrp;
+            g.add(gantryGrp);
+
+            const arm = new THREE.Mesh(
+              new THREE.BoxGeometry(0.85, 2.3, 0.9),
+              medicalWhiteMat
+            );
+            arm.position.set(0, 0.35, -0.4);
+            arm.castShadow = true;
+            gantryGrp.add(arm);
+
+            const head = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.42, 0.28, 0.55, 24),
+              brassMat
+            );
+            head.position.set(0, 1.15, 0.35);
+            gantryGrp.add(head);
+
+            const cone = new THREE.Mesh(
+              new THREE.ConeGeometry(0.48, 1.35, 24, 1, true),
+              new THREE.MeshBasicMaterial({
+                color: 0x38bdf8,
+                transparent: true,
+                opacity: 0.34,
+                side: THREE.DoubleSide
+              })
+            );
+            cone.position.set(0, 0.35, 0.35);
+            gantryGrp.add(cone);
+
+            const couch = new THREE.Mesh(
+              new THREE.BoxGeometry(0.68, 0.82, 2.5),
+              couchDarkMat
+            );
+            couch.position.set(0, 0.41, 1.2);
+            couch.castShadow = true;
+            g.add(couch);
+
+            const pallet = new THREE.Mesh(
+              new THREE.BoxGeometry(0.58, 0.08, 2.1),
+              brassMat
+            );
+            pallet.position.set(0, 0.86, 0.9);
+            g.add(pallet);
+            break;
+          }
+
+          case "anesthesia_cart": {
+            const cart = new THREE.Mesh(
+              new THREE.BoxGeometry(0.65, 1.35, 0.65),
+              medicalWhiteMat
+            );
+            cart.position.y = 0.675;
+            cart.castShadow = true;
+            g.add(cart);
+
+            const screen = new THREE.Mesh(
+              new THREE.BoxGeometry(0.48, 0.36, 0.06),
+              new THREE.MeshBasicMaterial({ color: 0x10b981 })
+            );
+            screen.position.y = 1.55;
+            g.add(screen);
+            break;
+          }
+
+          case "hotel_bed": {
+            const frame = new THREE.Mesh(
+              new THREE.BoxGeometry(2.2, 0.42, 1.75),
+              darkWalnutMat
+            );
+            frame.position.y = 0.21;
+            frame.castShadow = true;
+            g.add(frame);
+
+            const headboard = new THREE.Mesh(
+              new THREE.BoxGeometry(0.14, 1.15, 1.8),
+              darkWalnutMat
+            );
+            headboard.position.set(-1.05, 0.58, 0);
+            g.add(headboard);
+
+            const mattress = new THREE.Mesh(
+              new THREE.BoxGeometry(2.05, 0.22, 1.62),
+              medicalWhiteMat
+            );
+            mattress.position.y = 0.5;
+            g.add(mattress);
+
+            const blanket = new THREE.Mesh(
+              new THREE.BoxGeometry(1.4, 0.24, 1.64),
+              terracottaMat
+            );
+            blanket.position.set(0.3, 0.51, 0);
+            g.add(blanket);
+            break;
+          }
+
+          case "hotel_wardrobe": {
+            const body = new THREE.Mesh(
+              new THREE.BoxGeometry(1.45, 2.2, 0.62),
+              darkWalnutMat
+            );
+            body.position.y = 1.1;
+            body.castShadow = true;
+            g.add(body);
+
+            const mirrorDoor = new THREE.Mesh(
+              new THREE.BoxGeometry(0.64, 1.95, 0.03),
+              glassMat
+            );
+            mirrorDoor.position.set(-0.34, 1.12, 0.31);
+            g.add(mirrorDoor);
+
+            [-0.06, 0.06].forEach((hx) => {
+              const handle = new THREE.Mesh(
+                new THREE.BoxGeometry(0.025, 0.35, 0.04),
+                brassMat
+              );
+              handle.position.set(hx, 1.1, 0.33);
+              g.add(handle);
+            });
+            break;
+          }
+
+          case "remote_desk": {
+            const desk = new THREE.Mesh(
+              new THREE.BoxGeometry(1.5, 0.75, 0.7),
+              darkWalnutMat
+            );
+            desk.position.y = 0.375;
+            desk.castShadow = true;
+            g.add(desk);
+
+            const chair = new THREE.Mesh(
+              new THREE.BoxGeometry(0.5, 0.8, 0.5),
+              new THREE.MeshStandardMaterial({ color: 0x2e443b })
+            );
+            chair.position.set(0, 0.4, -0.65);
+            g.add(chair);
+            break;
+          }
+
+          case "pet_bed_sleeping": {
+            const bed = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.62, 0.68, 0.18, 24),
+              new THREE.MeshStandardMaterial({
+                color: 0x2e443b,
+                roughness: 0.8
+              })
+            );
+            bed.position.y = 0.09;
+            bed.castShadow = true;
+            g.add(bed);
+
+            const fur = new THREE.MeshStandardMaterial({
+              color: 0xd99b43,
+              roughness: 0.6
+            });
+            const dogBody = new THREE.Mesh(
+              new THREE.SphereGeometry(0.28, 16, 16),
+              fur
+            );
+            dogBody.scale.set(1.25, 0.65, 1.0);
+            dogBody.position.y = 0.22;
+            g.add(dogBody);
+
+            const dogHead = new THREE.Mesh(
+              new THREE.SphereGeometry(0.16, 14, 14),
+              fur
+            );
+            dogHead.position.set(0.24, 0.27, 0.12);
+            g.add(dogHead);
+            break;
+          }
+
+          case "cat_tree": {
+            const base = new THREE.Mesh(
+              new THREE.BoxGeometry(0.6, 0.08, 0.6),
+              brassMat
+            );
+            base.position.y = 0.04;
+            g.add(base);
+
+            const post = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.08, 0.08, 1.1, 16),
+              woodOakMat
+            );
+            post.position.y = 0.58;
+            g.add(post);
+
+            const top = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.32, 0.32, 0.08, 20),
+              brassMat
+            );
+            top.position.y = 1.15;
+            g.add(top);
+            break;
+          }
+
+          case "potted_plant": {
+            const pot = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.28, 0.2, 0.48, 20),
+              terracottaMat
+            );
+            pot.position.y = 0.24;
+            pot.castShadow = true;
+            g.add(pot);
+
+            const stem = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.03, 0.045, 0.68, 8),
+              darkWalnutMat
+            );
+            stem.position.y = 0.75;
+            g.add(stem);
+
+            [
+              [0, 1.08, 0, 0.36],
+              [0.22, 0.86, 0.14, 0.28],
+              [-0.22, 0.9, -0.12, 0.3],
+              [0.15, 1.24, -0.16, 0.26]
+            ].forEach(([lx, ly, lz, r]) => {
+              const leaf = new THREE.Mesh(
+                new THREE.SphereGeometry(r, 14, 14),
+                plantGreenMat
+              );
+              leaf.scale.set(1, 0.75, 1);
+              leaf.position.set(lx, ly, lz);
+              leaf.castShadow = true;
+              g.add(leaf);
+            });
+            break;
+          }
+
+          case "staff_marzena": {
+            // Pani Marzena (Recepcja)
+            const marzena = buildHumanCharacter({
+              coatColor: 0x2e443b,
+              scrubColor: 0xc5a67c,
+              hairColor: 0x3b2314,
+              hairStyle: "bun",
+              hasStethoscope: false
+            });
+            g.add(marzena);
+            break;
+          }
+
+          case "staff_dr_anna": {
+            // Dr Anna Jaśkiewicz (Lekarz Onkolog, blond włosy do ramion)
+            const drAnna = buildHumanCharacter({
+              coatColor: 0xfafaf9,
+              scrubColor: 0x0284c7,
+              hairColor: 0xe6c265,
+              hairStyle: "shoulder_blonde",
+              hasStethoscope: true
+            });
+            g.add(drAnna);
+            break;
+          }
+
+          case "staff_emilia": {
+            // Anestezjolog Emilia Sulik (kręcone włosy, turkusowy strój zabiegowy, stetoskop i karta znieczulenia)
+            const emilia = buildHumanCharacter({
+              coatColor: 0x0d9488,
+              scrubColor: 0xfafaf9,
+              hairColor: 0x5c3317,
+              hairStyle: "curly",
+              hasStethoscope: true,
+              hasClipboard: true
+            });
+            g.add(emilia);
+            break;
+          }
+
+          case "staff_pawel": {
+            // Technik Paweł (Sterownia, granatowy uniform elektroradiologii, okulary)
+            const pawel = buildHumanCharacter({
+              coatColor: 0x1e3a8a,
+              scrubColor: 0x38bdf8,
+              hairColor: 0x3a281c,
+              hairStyle: "short_male",
+              hasStethoscope: false,
+              hasGlasses: true
+            });
+            g.add(pawel);
+            break;
+          }
+        }
+
+        return g;
+      }
+
+      function buildClinicScene() {
+        CLINIC_WORLD.walls.forEach((w) => {
+          const wallGrp = createWallSegment(w);
+          if (wallGrp) worldRootGroup.add(wallGrp);
+        });
+        CLINIC_WORLD.objects.forEach((o) => {
+          const objGrp = createPrefabMesh(o);
+          if (objGrp) worldRootGroup.add(objGrp);
+        });
+      }
+
+      buildClinicScene();
+
+      // ============================================================================
+      // 6. DYNAMIC PET MODELS: WHITE POODLE WITH BROWN RUMP PATCH & PATIENT PET
+      // ============================================================================
+      function createWhitePoodleWithBrownPatch(scale = 1.08) {
+        const root = new THREE.Group();
+        root.scale.set(scale, scale, scale);
+
+        const whiteCurlyMat = new THREE.MeshStandardMaterial({
+          color: 0xf6f4ee,
+          roughness: 0.85
+        });
+        const brownPatchMat = new THREE.MeshStandardMaterial({
+          color: 0x9c7e63,
+          roughness: 0.82
+        });
+        const noseMat = new THREE.MeshStandardMaterial({
+          color: 0x18181b,
+          roughness: 0.35
+        });
+        const collarMat = new THREE.MeshStandardMaterial({
+          color: 0xb8653b,
+          roughness: 0.45
+        });
+
+        const shadowDisc = new THREE.Mesh(
+          new THREE.CircleGeometry(0.36, 20),
+          new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.25
+          })
+        );
+        shadowDisc.rotation.x = -Math.PI / 2;
+        shadowDisc.position.y = 0.01;
+        root.add(shadowDisc);
+
+        const torso = new THREE.Mesh(
+          new THREE.SphereGeometry(0.21, 18, 16),
+          whiteCurlyMat
+        );
+        torso.scale.set(0.88, 0.92, 1.65);
+        torso.position.set(0, 0.44, 0.04);
+        torso.castShadow = true;
+        root.add(torso);
+
+        [
+          [0, 0.49, 0.22, 0.17],
+          [-0.08, 0.46, 0.1, 0.15],
+          [0.08, 0.46, 0.1, 0.15],
+          [0, 0.42, 0.28, 0.16]
+        ].forEach(([cx, cy, cz, r]) => {
+          const puff = new THREE.Mesh(
+            new THREE.SphereGeometry(r, 14, 14),
+            whiteCurlyMat
+          );
+          puff.position.set(cx, cy, cz);
+          puff.castShadow = true;
+          root.add(puff);
+        });
+
+        // Charakterystyczna brązowa łatka na zadzie / u nasady ogona
+        const rumpPatchMain = new THREE.Mesh(
+          new THREE.SphereGeometry(0.185, 16, 16),
+          brownPatchMat
+        );
+        rumpPatchMain.scale.set(0.96, 0.9, 1.15);
+        rumpPatchMain.position.set(0, 0.47, -0.22);
+        rumpPatchMain.castShadow = true;
+        root.add(rumpPatchMain);
+
+        const rumpPatchSide = new THREE.Mesh(
+          new THREE.SphereGeometry(0.14, 14, 14),
+          brownPatchMat
+        );
+        rumpPatchSide.position.set(0.05, 0.43, -0.28);
+        root.add(rumpPatchSide);
+
+        const collar = new THREE.Mesh(
+          new THREE.TorusGeometry(0.135, 0.022, 10, 24),
+          collarMat
+        );
+        collar.rotation.x = Math.PI / 2 - 0.35;
+        collar.position.set(0, 0.54, 0.31);
+        root.add(collar);
+
+        const headGroup = new THREE.Group();
+        headGroup.position.set(0, 0.65, 0.36);
+        root.add(headGroup);
+
+        const skull = new THREE.Mesh(
+          new THREE.SphereGeometry(0.155, 16, 16),
+          whiteCurlyMat
+        );
+        skull.castShadow = true;
+        headGroup.add(skull);
+
+        const topknot = new THREE.Mesh(
+          new THREE.SphereGeometry(0.135, 14, 14),
+          whiteCurlyMat
+        );
+        topknot.scale.set(1.05, 0.85, 1.05);
+        topknot.position.set(0, 0.11, 0.01);
+        headGroup.add(topknot);
+
+        const snout = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.055, 0.082, 0.18, 14),
+          whiteCurlyMat
+        );
+        snout.rotation.x = Math.PI / 2;
+        snout.position.set(0, -0.02, 0.17);
+        headGroup.add(snout);
+
+        const nose = new THREE.Mesh(
+          new THREE.SphereGeometry(0.03, 10, 10),
+          noseMat
+        );
+        nose.position.set(0, 0.0, 0.26);
+        headGroup.add(nose);
+
+        [-0.062, 0.062].forEach((ex) => {
+          const eye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.022, 10, 10),
+            noseMat
+          );
+          eye.position.set(ex, 0.035, 0.135);
+          headGroup.add(eye);
+        });
+
+        [-0.135, 0.135].forEach((ex) => {
+          const ear = new THREE.Mesh(
+            new THREE.SphereGeometry(0.075, 12, 12),
+            brownPatchMat
+          );
+          ear.scale.set(0.52, 1.55, 0.88);
+          ear.position.set(ex, -0.03, 0.0);
+          ear.rotation.z = ex > 0 ? -0.2 : 0.2;
+          headGroup.add(ear);
+        });
+
+        const legs = [];
+        [
+          [-0.11, 0.32, 0.23],
+          [0.11, 0.32, 0.23],
+          [-0.11, 0.32, -0.23],
+          [0.11, 0.32, -0.23]
+        ].forEach(([lx, ly, lz]) => {
+          const legPivot = new THREE.Group();
+          legPivot.position.set(lx, ly, lz);
+
+          const legUpper = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.052, 0.044, 0.3, 12),
+            whiteCurlyMat
+          );
+          legUpper.position.y = -0.14;
+          legUpper.castShadow = true;
+          legPivot.add(legUpper);
+
+          const anklePuff = new THREE.Mesh(
+            new THREE.SphereGeometry(0.058, 10, 10),
+            whiteCurlyMat
+          );
+          anklePuff.position.set(0, -0.23, 0);
+          legPivot.add(anklePuff);
+
+          const paw = new THREE.Mesh(
+            new THREE.SphereGeometry(0.048, 10, 10),
+            whiteCurlyMat
+          );
+          paw.scale.set(0.9, 0.65, 1.25);
+          paw.position.set(0, -0.3, 0.02);
+          legPivot.add(paw);
+
+          root.add(legPivot);
+          legs.push(legPivot);
+        });
+
+        const tailPivot = new THREE.Group();
+        tailPivot.position.set(0, 0.5, -0.34);
+
+        const tailBase = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.035, 0.045, 0.22, 10),
+          brownPatchMat
+        );
+        tailBase.position.set(0, 0.08, -0.07);
+        tailBase.rotation.x = -0.65;
+        tailPivot.add(tailBase);
+
+        const tailPom = new THREE.Mesh(
+          new THREE.SphereGeometry(0.095, 14, 14),
+          whiteCurlyMat
+        );
+        tailPom.scale.set(1.0, 0.9, 1.25);
+        tailPom.position.set(0, 0.17, -0.16);
+        tailPivot.add(tailPom);
+
+        root.add(tailPivot);
+
+        scene.add(root);
+        return { root, legs, tailPivot, headGroup };
+      }
+
+      function createSculptedPet({
+        bodyColor,
+        earColor,
+        chestColor,
+        collarColor,
+        scale = 1,
+        isCat = false
+      }) {
+        const root = new THREE.Group();
+        root.scale.set(scale, scale, scale);
+
+        const furMat = new THREE.MeshStandardMaterial({
+          color: bodyColor,
+          roughness: 0.58
+        });
+        const darkMat = new THREE.MeshStandardMaterial({
+          color: earColor,
+          roughness: 0.65
+        });
+        const chestMat = new THREE.MeshStandardMaterial({
+          color: chestColor,
+          roughness: 0.65
+        });
+        const noseMat = new THREE.MeshStandardMaterial({
+          color: 0x141413,
+          roughness: 0.3
+        });
+        const collarMat = new THREE.MeshStandardMaterial({
+          color: collarColor,
+          roughness: 0.4
+        });
+
+        const shadowDisc = new THREE.Mesh(
+          new THREE.CircleGeometry(0.35, 20),
+          new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.28
+          })
+        );
+        shadowDisc.rotation.x = -Math.PI / 2;
+        shadowDisc.position.y = 0.01;
+        root.add(shadowDisc);
+
+        const torso = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 18, 16),
+          furMat
+        );
+        torso.scale.set(0.88, 0.82, 1.75);
+        torso.position.set(0, 0.38, 0);
+        torso.castShadow = true;
+        root.add(torso);
+
+        const chest = new THREE.Mesh(
+          new THREE.SphereGeometry(0.18, 16, 14),
+          chestMat
+        );
+        chest.scale.set(0.85, 0.85, 0.95);
+        chest.position.set(0, 0.36, 0.25);
+        root.add(chest);
+
+        const collar = new THREE.Mesh(
+          new THREE.TorusGeometry(0.145, 0.026, 10, 24),
+          collarMat
+        );
+        collar.rotation.x = Math.PI / 2 - 0.35;
+        collar.position.set(0, 0.48, 0.3);
+        root.add(collar);
+
+        const headGroup = new THREE.Group();
+        headGroup.position.set(0, 0.58, 0.36);
+        root.add(headGroup);
+
+        const skull = new THREE.Mesh(
+          new THREE.SphereGeometry(0.165, 18, 16),
+          furMat
+        );
+        skull.castShadow = true;
+        headGroup.add(skull);
+
+        const snout = new THREE.Mesh(
+          new THREE.CylinderGeometry(
+            isCat ? 0.055 : 0.068,
+            isCat ? 0.08 : 0.095,
+            isCat ? 0.11 : 0.18,
+            14
+          ),
+          chestMat
+        );
+        snout.rotation.x = Math.PI / 2;
+        snout.position.set(0, -0.03, isCat ? 0.14 : 0.18);
+        headGroup.add(snout);
+
+        const nose = new THREE.Mesh(
+          new THREE.SphereGeometry(0.032, 10, 10),
+          noseMat
+        );
+        nose.position.set(0, 0.0, isCat ? 0.2 : 0.27);
+        headGroup.add(nose);
+
+        [-0.068, 0.068].forEach((ex) => {
+          const eye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.024, 10, 10),
+            noseMat
+          );
+          eye.position.set(ex, 0.04, 0.14);
+          headGroup.add(eye);
+        });
+
+        [-0.125, 0.125].forEach((ex) => {
+          if (isCat) {
+            const ear = new THREE.Mesh(
+              new THREE.ConeGeometry(0.055, 0.13, 12),
+              darkMat
+            );
+            ear.position.set(ex * 0.85, 0.16, 0.02);
+            ear.rotation.z = ex > 0 ? -0.2 : 0.2;
+            headGroup.add(ear);
+          } else {
+            const ear = new THREE.Mesh(
+              new THREE.SphereGeometry(0.065, 12, 12),
+              darkMat
+            );
+            ear.scale.set(0.45, 1.45, 0.85);
+            ear.position.set(ex, -0.01, 0.01);
+            ear.rotation.z = ex > 0 ? -0.25 : 0.25;
+            headGroup.add(ear);
+          }
+        });
+
+        const legs = [];
+        [
+          [-0.11, 0.26, 0.23],
+          [0.11, 0.26, 0.23],
+          [-0.11, 0.26, -0.23],
+          [0.11, 0.26, -0.23]
+        ].forEach(([lx, ly, lz]) => {
+          const legPivot = new THREE.Group();
+          legPivot.position.set(lx, ly, lz);
+
+          const legMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.046, 0.038, 0.25, 12),
+            furMat
+          );
+          legMesh.position.y = -0.11;
+          legMesh.castShadow = true;
+          legPivot.add(legMesh);
+
+          const paw = new THREE.Mesh(
+            new THREE.SphereGeometry(0.048, 10, 10),
+            chestMat
+          );
+          paw.scale.set(0.9, 0.65, 1.25);
+          paw.position.set(0, -0.23, 0.02);
+          legPivot.add(paw);
+
+          root.add(legPivot);
+          legs.push(legPivot);
+        });
+
+        const tailPivot = new THREE.Group();
+        tailPivot.position.set(0, 0.44, -0.34);
+        const tailMesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.026, 0.046, isCat ? 0.44 : 0.36, 12),
+          darkMat
+        );
+        tailMesh.position.set(0, 0.15, -0.09);
+        tailMesh.rotation.x = isCat ? -0.3 : -0.75;
+        tailPivot.add(tailMesh);
+        root.add(tailPivot);
+
+        scene.add(root);
+        return { root, legs, tailPivot, headGroup };
+      }
+
+      // 1) Biały Pudel z brązową łatką na zadzie spacerujący po klinice
+      const whitePoodle = createWhitePoodleWithBrownPatch(1.06);
+      const dogPath = [
+        new THREE.Vector3(-11.2, 0, -4.5),
+        new THREE.Vector3(-11.0, 0, -0.2),
+        new THREE.Vector3(-4.2, 0, -0.2),
+        new THREE.Vector3(-4.2, 0, 5.8),
+        new THREE.Vector3(-4.2, 0, -0.2),
+        new THREE.Vector3(5.8, 0, 0.2),
+        new THREE.Vector3(-5.0, 0, 0.2),
+        new THREE.Vector3(-11.2, 0, -0.2)
+      ];
+      whitePoodle.root.position.copy(dogPath[0]);
+      const dogState = { idx: 1 };
+
+      // 2) Pacjent użytkownika (Kot lub Pies) przenoszony na kolejne stanowiska misji
+      const missionPetHolder = new THREE.Group();
+      scene.add(missionPetHolder);
+
+      let missionPet = null;
+      let carrierShell = null;
+
+      function rebuildMissionPetMesh() {
+        while (missionPetHolder.children.length > 0) {
+          missionPetHolder.remove(missionPetHolder.children[0]);
+        }
+
+        const isCat = patientProfile.species === "cat";
+        missionPet = createSculptedPet({
+          bodyColor: isCat ? 0xd96b27 : 0xc68642,
+          earColor: isCat ? 0x9a4212 : 0x7c4a1e,
+          chestColor: 0xfde6c4,
+          collarColor: 0x10b981,
+          scale: isCat ? 0.76 : 0.96,
+          isCat: isCat
+        });
+        scene.remove(missionPet.root);
+        missionPetHolder.add(missionPet.root);
+
+        // Transporter (widoczny dla kota w 1. kroku)
+        carrierShell = new THREE.Mesh(
+          new THREE.BoxGeometry(0.55, 0.45, 0.72),
+          new THREE.MeshStandardMaterial({
+            color: 0x0284c7,
+            transparent: true,
+            opacity: 0.42
+          })
+        );
+        carrierShell.position.set(0, 0.24, 0);
+        missionPetHolder.add(carrierShell);
+      }
+
+      rebuildMissionPetMesh();
+
+      function updatePetMovement(
+        pet,
+        pathArray,
+        currentIdxRef,
+        speed,
+        time,
+        freq
+      ) {
+        const pos = pet.root.position;
+        const target = pathArray[currentIdxRef.idx];
+        const dir = new THREE.Vector3().subVectors(target, pos);
+        dir.y = 0;
+        const dist = dir.length();
+
+        if (dist < 0.25) {
+          currentIdxRef.idx = (currentIdxRef.idx + 1) % pathArray.length;
+        } else {
+          dir.normalize();
+          pos.addScaledVector(dir, speed);
+          const desiredAngle = Math.atan2(dir.x, dir.z);
+          let angleDiff = desiredAngle - pet.root.rotation.y;
+          while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+          while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+          pet.root.rotation.y += angleDiff * 0.14;
+        }
+
+        const swing = Math.sin(time * freq) * 0.65;
+        pet.legs[0].rotation.x = swing;
+        pet.legs[3].rotation.x = swing;
+        pet.legs[1].rotation.x = -swing;
+        pet.legs[2].rotation.x = -swing;
+
+        pet.root.position.y = Math.abs(Math.sin(time * freq)) * 0.04;
+        pet.tailPivot.rotation.z = Math.sin(time * (freq * 1.6)) * 0.45;
+        pet.headGroup.rotation.x = Math.sin(time * (freq * 0.5)) * 0.08;
+      }
+
+      // ============================================================================
+      // 7. WAYPOINT RINGS & FLOATING POI LABELS
+      // ============================================================================
+      const waypointMeshes = [];
+      const ringGeo = new THREE.RingGeometry(0.32, 0.44, 32);
+      ringGeo.rotateX(-Math.PI / 2);
+      const innerDiscGeo = new THREE.CircleGeometry(0.24, 32);
+      innerDiscGeo.rotateX(-Math.PI / 2);
+
+      WAYPOINTS.forEach((wp, index) => {
+        const group = new THREE.Group();
+        group.position.set(wp.pos.x, 0.02, wp.pos.z);
+
+        const ringMesh = new THREE.Mesh(
+          ringGeo,
+          new THREE.MeshBasicMaterial({
+            color: 0xfbbf24,
+            side: THREE.DoubleSide
+          })
+        );
+        group.add(ringMesh);
+
+        const discMesh = new THREE.Mesh(
+          innerDiscGeo,
+          new THREE.MeshBasicMaterial({
+            color: 0xfde68a,
+            transparent: true,
+            opacity: 0.45
+          })
+        );
+        group.add(discMesh);
+
+        group.userData = { isWaypoint: true, waypointIndex: index };
+        ringMesh.userData = { isWaypoint: true, waypointIndex: index };
+        discMesh.userData = { isWaypoint: true, waypointIndex: index };
+
+        scene.add(group);
+        waypointMeshes.push(group);
+      });
+
+      const clickRingMesh = new THREE.Mesh(
+        ringGeo,
+        new THREE.MeshBasicMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0
+        })
+      );
+      clickRingMesh.position.y = 0.03;
+      scene.add(clickRingMesh);
+
+      const markersLayer = document.getElementById("markers-layer");
+      const poiElements = [];
+
+      WAYPOINTS.forEach((wp, idx) => {
+        const el = document.createElement("button");
+        el.className = "poi-marker group focus:outline-none";
+        el.onclick = (e) => {
+          e.stopPropagation();
+          walkToWaypoint(idx);
+        };
+        el.innerHTML = `
+          <div class="flex items-center gap-1.5 sm:gap-2 bg-obsidian/90 backdrop-blur-md border border-brass/70 px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-xl">
+            <span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-brass text-obsidian font-mono text-[9px] sm:text-[10px] font-bold flex items-center justify-center relative poi-ring">
+              0${idx + 1}
+            </span>
+            <span class="font-mono text-[10px] sm:text-[11px] text-alabaster group-hover:text-brass transition whitespace-nowrap poi-label-text">
+              ${wp.nav}
+            </span>
+          </div>
+        `;
+        markersLayer.appendChild(el);
+        poiElements.push({
+          el,
+          worldPos: new THREE.Vector3(wp.lookAt.x, 1.35, wp.lookAt.z),
+          idx
+        });
+      });
+
+      function updateProjectedMarkers() {
+        const halfW = window.innerWidth / 2;
+        const halfH = window.innerHeight / 2;
+
+        poiElements.forEach((item) => {
+          const v = item.worldPos.clone();
+          v.project(camera);
+          const dist = camera.position.distanceTo(item.worldPos);
+          if (v.z > 1 || dist > 26) {
+            item.el.style.opacity = "0";
+            item.el.style.pointerEvents = "none";
+          } else {
+            const x = v.x * halfW + halfW;
+            const y = -(v.y * halfH) + halfH;
+            item.el.style.left = `${x}px`;
+            item.el.style.top = `${y}px`;
+            item.el.style.opacity =
+              item.idx === currentWaypointIdx ? "1" : "0.82";
+            item.el.style.pointerEvents = "auto";
+          }
+        });
+      }
+
+      // ============================================================================
+      // 8. MODE SWITCHING & MISSION FLOW
+      // ============================================================================
+      function switchAppMode(mode) {
+        appMode = mode;
+
+        document.getElementById("modeBtn-mission").className =
+          mode === "mission"
+            ? "px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition bg-brass text-obsidian font-semibold whitespace-nowrap"
+            : "px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/75 hover:text-white whitespace-nowrap";
+
+        document.getElementById("modeBtn-tour").className =
+          mode === "tour"
+            ? "px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition bg-brass text-obsidian font-semibold whitespace-nowrap"
+            : "px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/75 hover:text-white whitespace-nowrap";
+
+        const missionBox = document.getElementById("missionStepperBox");
+
+        if (mode === "mission") {
+          missionBox.classList.remove("hidden");
+          toggleDrawer(true);
+          goToMissionStep(currentMissionStep);
+        } else {
+          missionBox.classList.add("hidden");
+          document.getElementById("physicsSimBox").classList.add("hidden");
+          toggleDrawer(true);
+          walkToWaypoint(currentWaypointIdx);
+        }
+      }
+
+      function toggleCameraViewMode() {
+        setCameraViewMode(cameraViewMode === "fpp" ? "orbit" : "fpp");
+      }
+
+      function setCameraViewMode(mode) {
+        cameraViewMode = mode;
+        const btn = document.getElementById("camModeBtn");
+        if (mode === "orbit") {
+          ceilingMesh.visible = false;
+          ceilingLightsGroup.visible = false;
+          btn.textContent = "📐 Widok: Z Góry";
+          btn.className =
+            "px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase bg-emerald text-obsidian font-semibold transition shrink-0";
+        } else {
+          ceilingMesh.visible = true;
+          ceilingLightsGroup.visible = true;
+          btn.textContent = "🎥 Kamera: Oczy";
+          btn.className =
+            "px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase bg-white/10 text-emerald hover:bg-emerald hover:text-obsidian transition shrink-0";
+        }
+      }
+
+      function goToMissionStep(stepIdx) {
+        const steps = getMissionSteps();
+        currentMissionStep = (stepIdx + steps.length) % steps.length;
+        const m = steps[currentMissionStep];
+        currentWaypointIdx = m.waypointIdx;
+
+        targetCamPos.set(m.pos.x, EYE_HEIGHT, m.pos.z);
+        const dx = m.lookAt.x - m.pos.x;
+        const dz = m.lookAt.z - m.pos.z;
+        const desiredYaw = Math.atan2(-dx, -dz);
+        let diff = desiredYaw - targetYaw;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        targetYaw += diff;
+        targetPitch = -0.08;
+
+        missionPetHolder.position.set(m.petPos.x, m.petPos.y, m.petPos.z);
+        if (carrierShell) carrierShell.visible = !!m.petPos.inCarrier;
+
+        document.getElementById("hud-room-code").textContent = m.code;
+        document.getElementById("hud-room-title").textContent = m.title;
+        document.getElementById("drawer-tag").textContent =
+          `SCENARIUSZ WIZYTY: ${patientProfile.name.toUpperCase()}`;
+        document.getElementById("mission-step-badge").textContent =
+          `ETAP ${currentMissionStep + 1} Z ${steps.length}`;
+        document.getElementById("mission-cat-status").textContent = m.status;
+        document.getElementById("mission-progress-bar").style.width =
+          `${((currentMissionStep + 1) / steps.length) * 100}%`;
+
+        document.getElementById("drawer-title").textContent = m.title;
+        document.getElementById("drawer-desc").textContent = m.desc;
+        document.getElementById("drawer-fact-title").textContent = m.factTitle;
+        document.getElementById("drawer-fact-body").textContent = m.factBody;
+        document.getElementById("drawer-img").src = m.img;
+        document.getElementById("drawer-next-btn").textContent = m.btnText;
+
+        const simBox = document.getElementById("physicsSimBox");
+        if (currentMissionStep === 5) {
+          simBox.classList.remove("hidden");
+        } else {
+          simBox.classList.add("hidden");
+        }
+
+        highlightNavButton(currentWaypointIdx);
+      }
+
+      function handlePrimaryAction() {
+        if (appMode === "mission") {
+          const steps = getMissionSteps();
+          if (currentMissionStep === steps.length - 1) {
+            switchAppMode("tour");
+            walkToWaypoint(7);
+          } else {
+            goToMissionStep(currentMissionStep + 1);
+          }
+        } else {
+          walkToWaypoint((currentWaypointIdx + 1) % WAYPOINTS.length);
+        }
+      }
+
+      function handlePrevAction() {
+        if (appMode === "mission") {
+          goToMissionStep(currentMissionStep - 1);
+        } else {
+          walkToWaypoint(
+            (currentWaypointIdx - 1 + WAYPOINTS.length) % WAYPOINTS.length
+          );
+        }
+      }
+
+      function walkToWaypoint(index) {
+        currentWaypointIdx = index;
+        const wp = WAYPOINTS[index];
+
+        targetCamPos.set(wp.pos.x, EYE_HEIGHT, wp.pos.z);
+        const dx = wp.lookAt.x - wp.pos.x;
+        const dz = wp.lookAt.z - wp.pos.z;
+        const desiredYaw = Math.atan2(-dx, -dz);
+        let diff = desiredYaw - targetYaw;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        targetYaw += diff;
+        targetPitch = -0.06;
+
+        if (appMode === "tour") {
+          const nextWp = WAYPOINTS[(index + 1) % WAYPOINTS.length];
+          document.getElementById("hud-room-code").textContent = wp.code;
+          document.getElementById("hud-room-title").textContent = wp.title;
+          document.getElementById("drawer-tag").textContent =
+            "PUNKT W PRZESTRZENI 3D";
+          document.getElementById("drawer-title").textContent = wp.title;
+          document.getElementById("drawer-desc").textContent = wp.desc;
+          document.getElementById("drawer-fact-title").textContent =
+            wp.factTitle;
+          document.getElementById("drawer-fact-body").textContent = wp.factBody;
+          document.getElementById("drawer-img").src = wp.img;
+          document.getElementById("drawer-next-btn").textContent =
+            `Idź dalej: ${nextWp.nav} →`;
+        }
+
+        highlightNavButton(index);
+      }
+
+      function highlightNavButton(index) {
+        WAYPOINTS.forEach((wp, i) => {
+          const btn = document.getElementById("navBtn-" + i);
+          if (btn) {
+            btn.className =
+              i === index
+                ? "px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition bg-brass text-obsidian font-semibold shrink-0"
+                : "px-2.5 py-1.5 text-[10px] sm:text-[11px] font-mono uppercase transition text-alabaster/70 hover:text-white shrink-0";
+          }
+        });
+      }
+
+      function toggleDrawer(show) {
+        const drawer = document.getElementById("infoDrawer");
+        const openBtn = document.getElementById("openDrawerBtn");
+        if (show) {
+          drawer.classList.remove(
+            "translate-y-[110%]",
+            "md:translate-x-[120%]"
+          );
+          openBtn.classList.add("hidden");
+        } else {
+          drawer.classList.add("translate-y-[110%]", "md:translate-x-[120%]");
+          openBtn.classList.remove("hidden");
+        }
+      }
+
+      // ============================================================================
+      // 9. TOUCH & MOUSE NAVIGATION (MOBILE-FIRST DRAG, TAP-TO-WALK, PINCH)
+      // ============================================================================
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      let isDragging = false;
+      let pointerDownPos = { x: 0, y: 0 };
+      let prevPointerPos = { x: 0, y: 0 };
+
+      container.addEventListener("pointerdown", (e) => {
+        isDragging = true;
+        pointerDownPos = { x: e.clientX, y: e.clientY };
+        prevPointerPos = { x: e.clientX, y: e.clientY };
+      });
+
+      window.addEventListener("pointermove", (e) => {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+        if (isDragging) {
+          const dx = e.clientX - prevPointerPos.x;
+          const dy = e.clientY - prevPointerPos.y;
+          prevPointerPos = { x: e.clientX, y: e.clientY };
+
+          if (cameraViewMode === "orbit") {
+            orbitTheta -= dx * 0.006;
+            orbitPhi = Math.max(0.25, Math.min(1.38, orbitPhi - dy * 0.006));
+          } else {
+            targetYaw += dx * 0.0045;
+            targetPitch = Math.max(
+              -0.55,
+              Math.min(0.55, targetPitch + dy * 0.0035)
+            );
+          }
+        } else {
+          raycaster.setFromCamera(mouse, camera);
+          const hits = raycaster.intersectObjects(waypointMeshes, true);
+          container.classList.toggle("hover-interactive", hits.length > 0);
+        }
+      });
+
+      window.addEventListener("pointerup", (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+
+        const moveDist = Math.hypot(
+          e.clientX - pointerDownPos.x,
+          e.clientY - pointerDownPos.y
+        );
+        if (moveDist < 8 && e.target === renderer.domElement) {
+          handleViewportClick(e);
+        }
+      });
+
+      container.addEventListener(
+        "wheel",
+        (e) => {
+          if (cameraViewMode === "orbit") {
+            orbitRadius = Math.max(
+              10,
+              Math.min(44, orbitRadius + e.deltaY * 0.02)
+            );
+          }
+        },
+        { passive: true }
+      );
+
+      function handleViewportClick(e) {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        const wpHits = raycaster.intersectObjects(waypointMeshes, true);
+        if (wpHits.length > 0) {
+          const wpIdx = wpHits[0].object.userData.waypointIndex;
+          if (wpIdx !== undefined) {
+            walkToWaypoint(wpIdx);
+            return;
+          }
+        }
+
+        const floorHits = raycaster.intersectObject(floorMesh);
+        if (floorHits.length > 0) {
+          const pt = floorHits[0].point;
+          const targetX = Math.max(-15.8, Math.min(17.8, pt.x));
+          const targetZ = Math.max(-10.8, Math.min(10.8, pt.z));
+
+          clickRingMesh.position.set(targetX, 0.03, targetZ);
+          clickRingMesh.material.opacity = 0.95;
+
+          const angleToTarget = Math.atan2(
+            -(targetX - camPos.x),
+            -(targetZ - camPos.z)
+          );
+          let diff = angleToTarget - targetYaw;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          targetYaw += diff * 0.45;
+
+          targetCamPos.set(targetX, EYE_HEIGHT, targetZ);
+        }
+      }
+
+      const keysPressed = {};
+      window.addEventListener("keydown", (e) => {
+        keysPressed[e.code] = true;
+      });
+      window.addEventListener("keyup", (e) => {
+        keysPressed[e.code] = false;
+      });
+
+      function processKeyboardMovement() {
+        if (
+          document.activeElement &&
+          document.activeElement.tagName === "INPUT"
+        )
+          return;
+        const speed = 0.12;
+        if (cameraViewMode === "orbit") {
+          if (keysPressed["KeyW"] || keysPressed["ArrowUp"])
+            orbitCenter.z -= speed * 1.5;
+          if (keysPressed["KeyS"] || keysPressed["ArrowDown"])
+            orbitCenter.z += speed * 1.5;
+          if (keysPressed["KeyA"] || keysPressed["ArrowLeft"])
+            orbitCenter.x -= speed * 1.5;
+          if (keysPressed["KeyD"] || keysPressed["ArrowRight"])
+            orbitCenter.x += speed * 1.5;
+          return;
+        }
+
+        const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+        const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+
+        if (keysPressed["KeyW"] || keysPressed["ArrowUp"])
+          targetCamPos.addScaledVector(forward, speed);
+        if (keysPressed["KeyS"] || keysPressed["ArrowDown"])
+          targetCamPos.addScaledVector(forward, -speed);
+        if (keysPressed["KeyA"] || keysPressed["ArrowLeft"])
+          targetCamPos.addScaledVector(right, -speed);
+        if (keysPressed["KeyD"] || keysPressed["ArrowRight"])
+          targetCamPos.addScaledVector(right, speed);
+
+        targetCamPos.x = Math.max(-15.8, Math.min(17.8, targetCamPos.x));
+        targetCamPos.z = Math.max(-10.8, Math.min(10.8, targetCamPos.z));
+      }
+
+      // ============================================================================
+      // 10. LIVE 2D RADAR MINIMAP
+      // ============================================================================
+      const radarCanvas = document.getElementById("radarCanvas");
+      const rCtx = radarCanvas ? radarCanvas.getContext("2d") : null;
+
+      function worldToRadar(wx, wz) {
+        const rx = ((wx + 17) / 36) * radarCanvas.width;
+        const rz = ((wz + 12) / 24) * radarCanvas.height;
+        return { x: rx, y: rz };
+      }
+
+      if (radarCanvas) {
+        radarCanvas.addEventListener("click", (e) => {
+          const rect = radarCanvas.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const clickY = e.clientY - rect.top;
+          const wx = (clickX / radarCanvas.width) * 36 - 17;
+          const wz = (clickY / radarCanvas.height) * 24 - 12;
+
+          let bestIdx = 0;
+          let bestD = 999;
+          WAYPOINTS.forEach((wp, idx) => {
+            const d = Math.hypot(wp.pos.x - wx, wp.pos.z - wz);
+            if (d < bestD) {
+              bestD = d;
+              bestIdx = idx;
+            }
+          });
+          walkToWaypoint(bestIdx);
+        });
+      }
+
+      function drawRadar() {
+        if (!rCtx) return;
+        rCtx.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
+
+        rCtx.strokeStyle = "rgba(197, 166, 124, 0.55)";
+        rCtx.lineWidth = 1.5;
+        CLINIC_WORLD.walls.forEach((w) => {
+          const p1 = worldToRadar(w.x1, w.z1);
+          const p2 = worldToRadar(w.x2, w.z2);
+          rCtx.beginPath();
+          rCtx.moveTo(p1.x, p1.y);
+          rCtx.lineTo(p2.x, p2.y);
+          rCtx.stroke();
+        });
+
+        WAYPOINTS.forEach((wp, idx) => {
+          const p = worldToRadar(wp.pos.x, wp.pos.z);
+          rCtx.fillStyle = idx === currentWaypointIdx ? "#34D399" : "#C5A67C";
+          rCtx.beginPath();
+          rCtx.arc(
+            p.x,
+            p.y,
+            idx === currentWaypointIdx ? 4 : 2.5,
+            0,
+            Math.PI * 2
+          );
+          rCtx.fill();
+        });
+
+        const dogP = worldToRadar(
+          whitePoodle.root.position.x,
+          whitePoodle.root.position.z
+        );
+        rCtx.fillStyle = "#F6F4EE";
+        rCtx.beginPath();
+        rCtx.arc(dogP.x, dogP.y, 3, 0, Math.PI * 2);
+        rCtx.fill();
+
+        const petP = worldToRadar(
+          missionPetHolder.position.x,
+          missionPetHolder.position.z
+        );
+        rCtx.fillStyle = "#FB923C";
+        rCtx.beginPath();
+        rCtx.arc(petP.x, petP.y, 3, 0, Math.PI * 2);
+        rCtx.fill();
+
+        const playerP = worldToRadar(camPos.x, camPos.z);
+        const lookDirAngle = -yaw - Math.PI / 2;
+
+        rCtx.fillStyle = "rgba(56, 189, 248, 0.28)";
+        rCtx.beginPath();
+        rCtx.moveTo(playerP.x, playerP.y);
+        rCtx.arc(
+          playerP.x,
+          playerP.y,
+          22,
+          lookDirAngle - 0.5,
+          lookDirAngle + 0.5
+        );
+        rCtx.closePath();
+        rCtx.fill();
+
+        rCtx.fillStyle = "#38BDF8";
+        rCtx.beginPath();
+        rCtx.arc(playerP.x, playerP.y, 4, 0, Math.PI * 2);
+        rCtx.fill();
+
+        const coordsEl = document.getElementById("ui-coords");
+        if (coordsEl) {
+          coordsEl.textContent = `X:${camPos.x.toFixed(0)}m Z:${camPos.z.toFixed(0)}m`;
+        }
+      }
+
+      // ============================================================================
+      // 11. MAIN ANIMATION LOOP
+      // ============================================================================
+      const clock = new THREE.Clock();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+
+        processKeyboardMovement();
+
+        if (cameraViewMode === "orbit") {
+          const ox =
+            orbitCenter.x +
+            orbitRadius * Math.sin(orbitPhi) * Math.sin(orbitTheta);
+          const oy = orbitRadius * Math.cos(orbitPhi);
+          const oz =
+            orbitCenter.z +
+            orbitRadius * Math.sin(orbitPhi) * Math.cos(orbitTheta);
+          camera.position.set(ox, oy, oz);
+          camera.lookAt(orbitCenter.x, 0, orbitCenter.z);
+        } else {
+          const distToTarget = camPos.distanceTo(targetCamPos);
+          camPos.lerp(targetCamPos, 0.07);
+
+          let bobOffset = 0;
+          if (distToTarget > 0.08) {
+            walkBobTimer += 0.16;
+            bobOffset =
+              Math.sin(walkBobTimer) * 0.042 * Math.min(distToTarget, 1);
+          }
+
+          yaw += (targetYaw - yaw) * 0.12;
+          pitch += (targetPitch - pitch) * 0.12;
+
+          camera.position.set(camPos.x, EYE_HEIGHT + bobOffset, camPos.z);
+          camera.rotation.order = "YXZ";
+          camera.rotation.y = yaw;
+          camera.rotation.x = pitch;
+        }
+
+        if (linacGantryGroup) {
+          linacGantryGroup.rotation.z = Math.sin(t * 0.55) * 0.65;
+        }
+        if (ctLaserRing) {
+          ctLaserRing.position.z = Math.sin(t * 1.8) * 0.35;
+        }
+
+        updatePetMovement(whitePoodle, dogPath, dogState, 0.04, t, 11);
+
+        if (missionPet) {
+          missionPet.tailPivot.rotation.z = Math.sin(t * 4.5) * 0.35;
+          missionPet.headGroup.rotation.y = Math.sin(t * 1.8) * 0.18;
+        }
+
+        const scalePulse = 1 + Math.sin(t * 3) * 0.08;
+        waypointMeshes.forEach((grp, idx) => {
+          grp.scale.set(scalePulse, 1, scalePulse);
+          grp.children[0].material.color.setHex(
+            idx === currentWaypointIdx ? 0x34d399 : 0xfbbf24
+          );
+        });
+
+        if (clickRingMesh.material.opacity > 0.01) {
+          clickRingMesh.material.opacity *= 0.92;
+        }
+
+        renderer.render(scene, camera);
+        updateProjectedMarkers();
+        drawRadar();
+      }
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      function openDroneModal() {
+        document.getElementById("droneModal").classList.remove("hidden");
+        document
+          .getElementById("droneVideo")
+          .play()
+          .catch(() => {});
+      }
+
+      function closeDroneModal() {
+        document.getElementById("droneVideo").pause();
+        document.getElementById("droneModal").classList.add("hidden");
+      }
+
+      // Initialize default mission step behind the welcome modal
+      goToMissionStep(0);
+      animate();
+    </script>
+  </body>
+</html>
